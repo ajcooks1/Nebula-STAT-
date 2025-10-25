@@ -236,20 +236,26 @@ function MaintenanceTimes() {
     setLoading(true)
     setError(null)
     try {
-      // Load tickets and technicians in parallel
-      const [ticketsRes, techniciansRes] = await Promise.all([
-        fetch(`${API_BASE}/tickets`),
-        fetch(`${API_BASE}/technicians`)
-      ])
-      
+      // Load tickets first
+      const ticketsRes = await fetch(`${API_BASE}/tickets`)
       if (!ticketsRes.ok) throw new Error(await ticketsRes.text())
-      if (!techniciansRes.ok) throw new Error(await techniciansRes.text())
-      
       const ticketsData = await ticketsRes.json()
-      const techniciansData = await techniciansRes.json()
-      
       setTickets(ticketsData.tickets ?? [])
-      setTechnicians(techniciansData.technicians ?? [])
+      
+      // Try to load technicians, but don't fail if the table doesn't exist
+      try {
+        const techniciansRes = await fetch(`${API_BASE}/technicians`)
+        if (techniciansRes.ok) {
+          const techniciansData = await techniciansRes.json()
+          setTechnicians(techniciansData.technicians ?? [])
+        } else {
+          // If technicians endpoint fails, just use empty array
+          setTechnicians([])
+        }
+      } catch (technicianError) {
+        // If technicians table doesn't exist, just use empty array
+        setTechnicians([])
+      }
     } catch (e) {
       setError(e.message)
     } finally {
