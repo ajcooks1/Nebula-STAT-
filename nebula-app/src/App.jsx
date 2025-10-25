@@ -957,17 +957,50 @@ function HomeScreen({ onNavigate }) {
 
 // Enhanced Dashboard Page
 function DashboardPage({ onNavigate }) {
-  // Enhanced sample data
+  const [tickets, setTickets] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    loadTickets()
+  }, [])
+
+  async function loadTickets() {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`${API_BASE}/tickets`)
+      if (!res.ok) throw new Error(await res.text())
+      const body = await res.json()
+      setTickets(body.tickets ?? [])
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Calculate maintenance statistics from real data
+  const maintenanceStats = {
+    total: tickets.length,
+    pending: tickets.filter(t => t.status === 'Triaged').length,
+    scheduled: tickets.filter(t => t.status === 'Scheduled').length,
+    completed: tickets.filter(t => t.status === 'Completed').length,
+    highPriority: tickets.filter(t => t.severity === 'high').length,
+    urgent: tickets.filter(t => t.severity === 'high' && t.status === 'Triaged').length
+  }
+
+  // Enhanced sample data for other sections
   const dashboardStats = {
     totalProperties: 24,
     totalUnits: 156,
     occupancyRate: 94.2,
     totalRevenue: 125400,
     monthlyRevenue: 15600,
-    pendingRequests: 8,
-    completedRequests: 142,
+    pendingRequests: maintenanceStats.pending,
+    completedRequests: maintenanceStats.completed,
     overduePayments: 3,
-    maintenanceScheduled: 12
+    maintenanceScheduled: maintenanceStats.scheduled
   }
 
   const recentActivity = [
@@ -988,12 +1021,24 @@ function DashboardPage({ onNavigate }) {
     collectionRate: 96.8
   }
 
-  const maintenanceData = [
-    { id: 1, unit: "Unit 2B", issue: "Leaky faucet", priority: "Medium", daysLeft: 2, assignedTo: "Mike Johnson", status: "in_progress" },
-    { id: 2, unit: "Unit 4A", issue: "Broken AC", priority: "High", daysLeft: 1, assignedTo: "Sarah Wilson", status: "scheduled" },
-    { id: 3, unit: "Unit 1C", issue: "Door lock repair", priority: "Low", daysLeft: 5, assignedTo: "Tom Davis", status: "pending" },
-    { id: 4, unit: "Unit 3B", issue: "Electrical outlet", priority: "High", daysLeft: 0, assignedTo: "Mike Johnson", status: "urgent" }
-  ]
+  // Convert real tickets to maintenance data format
+  const getMaintenanceData = () => {
+    return tickets.slice(0, 4).map(ticket => {
+      const createdDate = new Date(ticket.created_at)
+      const now = new Date()
+      const daysSinceCreated = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24))
+      
+      return {
+        id: ticket.id,
+        unit: `Unit ${ticket.tenant_id || 'N/A'}`,
+        issue: ticket.description,
+        priority: ticket.severity === 'high' ? 'High' : ticket.severity === 'medium' ? 'Medium' : 'Low',
+        daysLeft: Math.max(0, 7 - daysSinceCreated), // Assume 7 days to complete
+        assignedTo: ticket.technician_id ? `Technician ${ticket.technician_id}` : 'Unassigned',
+        status: ticket.status.toLowerCase().replace('_', ' ')
+      }
+    })
+  }
 
   const upcomingEvents = [
     { id: 1, title: "Building Inspection", date: "Tomorrow 10:00 AM", type: "inspection", location: "Main Building" },
@@ -1057,6 +1102,38 @@ function DashboardPage({ onNavigate }) {
             <div className="metric-content">
               <span className="metric-number">${dashboardStats.monthlyRevenue.toLocaleString()}</span>
               <span className="metric-label">Monthly Revenue</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Maintenance Statistics Row */}
+        <div className="metrics-row">
+          <div className="metric-card">
+            <div className="metric-icon">🔧</div>
+            <div className="metric-content">
+              <span className="metric-number">{maintenanceStats.total}</span>
+              <span className="metric-label">Total Requests</span>
+            </div>
+          </div>
+          <div className="metric-card urgent">
+            <div className="metric-icon">⚠️</div>
+            <div className="metric-content">
+              <span className="metric-number">{maintenanceStats.urgent}</span>
+              <span className="metric-label">Urgent</span>
+            </div>
+          </div>
+          <div className="metric-card pending">
+            <div className="metric-icon">⏳</div>
+            <div className="metric-content">
+              <span className="metric-number">{maintenanceStats.pending}</span>
+              <span className="metric-label">Pending</span>
+            </div>
+          </div>
+          <div className="metric-card completed">
+            <div className="metric-icon">✅</div>
+            <div className="metric-content">
+              <span className="metric-number">{maintenanceStats.completed}</span>
+              <span className="metric-label">Completed</span>
             </div>
           </div>
         </div>
@@ -1128,26 +1205,44 @@ function DashboardPage({ onNavigate }) {
             <div className="widget-header">
               <div className="widget-icon">🔧</div>
               <h3>Maintenance Status</h3>
-              <div className="widget-badge">{maintenanceData.length}</div>
+              <div className="widget-badge">{maintenanceStats.total}</div>
             </div>
             <div className="widget-content">
-              <div className="maintenance-list">
-                {maintenanceData.slice(0, 3).map(maintenance => (
-                  <div key={maintenance.id} className={`maintenance-item priority-${maintenance.priority.toLowerCase()}`}>
-                    <div className="maintenance-info">
-                      <span className="maintenance-unit">{maintenance.unit}</span>
-                      <span className="maintenance-issue">{maintenance.issue}</span>
-                      <span className="maintenance-assigned">Assigned: {maintenance.assignedTo}</span>
+              {loading ? (
+                <div className="loading-state">
+                  <div className="loading-spinner"></div>
+                  <p>Loading maintenance requests...</p>
+                </div>
+              ) : error ? (
+                <div className="alert alert-error">
+                  <p>Error loading maintenance data: {error}</p>
+                  <button onClick={loadTickets} className="btn btn-sm">Retry</button>
+                </div>
+              ) : tickets.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon">🔧</div>
+                  <h3>No maintenance requests</h3>
+                  <p>Maintenance requests will appear here once submitted.</p>
+                </div>
+              ) : (
+                <div className="maintenance-list">
+                  {getMaintenanceData().slice(0, 3).map(maintenance => (
+                    <div key={maintenance.id} className={`maintenance-item priority-${maintenance.priority.toLowerCase()}`}>
+                      <div className="maintenance-info">
+                        <span className="maintenance-unit">{maintenance.unit}</span>
+                        <span className="maintenance-issue">{maintenance.issue}</span>
+                        <span className="maintenance-assigned">Assigned: {maintenance.assignedTo}</span>
+                      </div>
+                      <div className="maintenance-meta">
+                        <span className={`maintenance-priority priority-${maintenance.priority.toLowerCase()}`}>
+                          {maintenance.priority}
+                        </span>
+                        <span className="maintenance-days">{maintenance.daysLeft}d</span>
+                      </div>
                     </div>
-                    <div className="maintenance-meta">
-                      <span className={`maintenance-priority priority-${maintenance.priority.toLowerCase()}`}>
-                        {maintenance.priority}
-                      </span>
-                      <span className="maintenance-days">{maintenance.daysLeft}d</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
