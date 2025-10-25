@@ -1,0 +1,9 @@
+# prevent secrets from leaking
+.env
+
+# Node modules (unnecessary in GitHub)
+node_modules
+
+# Logs
+npm-debug.log
+.DS_Store
