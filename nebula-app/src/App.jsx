@@ -222,6 +222,102 @@ function Requests() {
 }
 
 function MaintenanceTimes() {
+  const [tickets, setTickets] = useState([])
+  const [technicians, setTechnicians] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [filter, setFilter] = useState('all') // all, pending, scheduled, completed
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  async function loadData() {
+    setLoading(true)
+    setError(null)
+    try {
+      // Load tickets and technicians in parallel
+      const [ticketsRes, techniciansRes] = await Promise.all([
+        fetch(`${API_BASE}/tickets`),
+        fetch(`${API_BASE}/technicians`)
+      ])
+      
+      if (!ticketsRes.ok) throw new Error(await ticketsRes.text())
+      if (!techniciansRes.ok) throw new Error(await techniciansRes.text())
+      
+      const ticketsData = await ticketsRes.json()
+      const techniciansData = await techniciansRes.json()
+      
+      setTickets(ticketsData.tickets ?? [])
+      setTechnicians(techniciansData.technicians ?? [])
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Get technician name by ID
+  const getTechnicianName = (technicianId) => {
+    if (!technicianId) return 'Unassigned'
+    const technician = technicians.find(t => t.id === technicianId)
+    return technician ? technician.name : `Technician ${technicianId}`
+  }
+
+  // Categorize tickets by status and time
+  const now = new Date()
+  const categorizedTickets = {
+    pending: tickets.filter(ticket => ticket.status === 'Triaged'),
+    scheduled: tickets.filter(ticket => {
+      if (ticket.status === 'Scheduled') return true
+      if (ticket.scheduled_at) {
+        const scheduledDate = new Date(ticket.scheduled_at)
+        return scheduledDate >= now
+      }
+      return false
+    }),
+    completed: tickets.filter(ticket => ticket.status === 'Completed'),
+    urgent: tickets.filter(ticket => ticket.severity === 'high' && ticket.status !== 'Completed')
+  }
+
+  const filteredTickets = filter === 'all' ? tickets : categorizedTickets[filter]
+
+  const getStatusColor = (status, severity) => {
+    if (status === 'Completed') return 'completed'
+    if (status === 'Scheduled') return 'scheduled'
+    if (severity === 'high') return 'urgent'
+    return 'pending'
+  }
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'Completed': return '✅'
+      case 'Scheduled': return '📅'
+      case 'Triaged': return '⏳'
+      default: return '🔧'
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="maintenance-page">
+        <div className="page-header">
+          <h1 className="page-title">
+            <span className="page-icon">🔧</span>
+            Maintenance Schedule
+          </h1>
+          <p className="page-subtitle">View maintenance hours and scheduled services</p>
+        </div>
+        <div className="maintenance-content">
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <p>Loading maintenance data...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="maintenance-page">
       <div className="page-header">
@@ -233,69 +329,158 @@ function MaintenanceTimes() {
       </div>
 
       <div className="maintenance-content">
-        <div className="maintenance-grid">
-          <div className="maintenance-card">
-            <div className="card-header">
-              <div className="card-icon">⏰</div>
-              <h3 className="card-title">Regular Hours</h3>
-            </div>
-            <div className="card-content">
-              <div className="schedule-item">
-                <span className="schedule-days">Monday - Friday</span>
-                <span className="schedule-time">8:00 AM - 5:00 PM</span>
-              </div>
-              <div className="schedule-item">
-                <span className="schedule-days">Saturday</span>
-                <span className="schedule-time">9:00 AM - 3:00 PM</span>
-              </div>
-              <div className="schedule-item">
-                <span className="schedule-days">Sunday</span>
-                <span className="schedule-time">Emergency only</span>
-              </div>
-            </div>
-          </div>
+        {/* Filter Tabs */}
+        <div className="maintenance-filters">
+          <button 
+            className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            All ({tickets.length})
+          </button>
+          <button 
+            className={`filter-tab ${filter === 'pending' ? 'active' : ''}`}
+            onClick={() => setFilter('pending')}
+          >
+            Pending ({categorizedTickets.pending.length})
+          </button>
+          <button 
+            className={`filter-tab ${filter === 'scheduled' ? 'active' : ''}`}
+            onClick={() => setFilter('scheduled')}
+          >
+            Scheduled ({categorizedTickets.scheduled.length})
+          </button>
+          <button 
+            className={`filter-tab ${filter === 'completed' ? 'active' : ''}`}
+            onClick={() => setFilter('completed')}
+          >
+            Completed ({categorizedTickets.completed.length})
+          </button>
+          <button 
+            className={`filter-tab ${filter === 'urgent' ? 'active' : ''}`}
+            onClick={() => setFilter('urgent')}
+          >
+            Urgent ({categorizedTickets.urgent.length})
+          </button>
+        </div>
 
-          <div className="maintenance-card emergency">
-            <div className="card-header">
-              <div className="card-icon">🚨</div>
-              <h3 className="card-title">Emergency Service</h3>
-            </div>
-            <div className="card-content">
-              <p className="emergency-text">Available 24/7 for urgent issues</p>
-              <div className="contact-info">
-                <span className="contact-label">Emergency Hotline:</span>
-                <span className="contact-value">(555) 123-MAINT</span>
+        {/* Maintenance Hours Info */}
+        <div className="maintenance-info-section">
+          <div className="maintenance-grid">
+            <div className="maintenance-card">
+              <div className="card-header">
+                <div className="card-icon">⏰</div>
+                <h3 className="card-title">Regular Hours</h3>
               </div>
-              <div className="emergency-note">
-                <strong>Note:</strong> Emergency calls are for urgent safety issues only
+              <div className="card-content">
+                <div className="schedule-item">
+                  <span className="schedule-days">Monday - Friday</span>
+                  <span className="schedule-time">8:00 AM - 5:00 PM</span>
+                </div>
+                <div className="schedule-item">
+                  <span className="schedule-days">Saturday</span>
+                  <span className="schedule-time">9:00 AM - 3:00 PM</span>
+                </div>
+                <div className="schedule-item">
+                  <span className="schedule-days">Sunday</span>
+                  <span className="schedule-time">Emergency only</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="maintenance-card">
-            <div className="card-header">
-              <div className="card-icon">📅</div>
-              <h3 className="card-title">Scheduled Services</h3>
-            </div>
-            <div className="card-content">
-              <div className="service-item">
-                <span className="service-name">Building Inspections</span>
-                <span className="service-frequency">Monthly (1st Monday)</span>
+            <div className="maintenance-card emergency">
+              <div className="card-header">
+                <div className="card-icon">🚨</div>
+                <h3 className="card-title">Emergency Service</h3>
               </div>
-              <div className="service-item">
-                <span className="service-name">HVAC Maintenance</span>
-                <span className="service-frequency">Quarterly</span>
-              </div>
-              <div className="service-item">
-                <span className="service-name">Elevator Service</span>
-                <span className="service-frequency">Bi-weekly</span>
-              </div>
-              <div className="service-item">
-                <span className="service-name">Fire Safety Check</span>
-                <span className="service-frequency">Monthly</span>
+              <div className="card-content">
+                <p className="emergency-text">Available 24/7 for urgent issues</p>
+                <div className="contact-info">
+                  <span className="contact-label">Emergency Hotline:</span>
+                  <span className="contact-value">(555) 123-MAINT</span>
+                </div>
+                <div className="emergency-note">
+                  <strong>Note:</strong> Emergency calls are for urgent safety issues only
+                </div>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Maintenance Requests List */}
+        <div className="maintenance-requests-section">
+          <h3 className="section-title">
+            {filter === 'all' && 'All Maintenance Requests'}
+            {filter === 'pending' && 'Pending Requests'}
+            {filter === 'scheduled' && 'Scheduled Maintenance'}
+            {filter === 'completed' && 'Completed Maintenance'}
+            {filter === 'urgent' && 'Urgent Requests'}
+          </h3>
+
+          {error ? (
+            <div className="alert alert-error">
+              <p>Error loading maintenance requests: {error}</p>
+              <button onClick={loadData} className="btn btn-sm">Retry</button>
+            </div>
+          ) : filteredTickets.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">🔧</div>
+              <h3>No maintenance requests found</h3>
+              <p>
+                {filter === 'all' && 'No maintenance requests have been submitted yet.'}
+                {filter === 'pending' && 'No pending maintenance requests found.'}
+                {filter === 'scheduled' && 'No scheduled maintenance requests found.'}
+                {filter === 'completed' && 'No completed maintenance requests found.'}
+                {filter === 'urgent' && 'No urgent maintenance requests found.'}
+              </p>
+            </div>
+          ) : (
+            <div className="maintenance-requests-grid">
+              {filteredTickets.map(ticket => (
+                <div key={ticket.id} className={`maintenance-request-card ${getStatusColor(ticket.status, ticket.severity)}`}>
+                  <div className="request-header">
+                    <div className="request-status">
+                      <span className="status-icon">{getStatusIcon(ticket.status)}</span>
+                      <span className="status-text">{ticket.status}</span>
+                    </div>
+                    <div className="request-meta">
+                      <span className="request-category">{ticket.category}</span>
+                      <span className={`severity-badge ${ticket.severity}`}>
+                        {ticket.severity}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="request-content">
+                    <p className="request-description">{ticket.description}</p>
+                    {ticket.photo_url && (
+                      <div className="request-photo">
+                        <img src={ticket.photo_url} alt="Request photo" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="request-footer">
+                    <div className="request-dates">
+                      <div className="date-item">
+                        <span className="date-label">Created:</span>
+                        <span className="date-value">{formatDate(ticket.created_at)}</span>
+                      </div>
+                      {ticket.scheduled_at && (
+                        <div className="date-item">
+                          <span className="date-label">Scheduled:</span>
+                          <span className="date-value">{formatDate(ticket.scheduled_at)}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="request-technician">
+                      <span className="technician-label">Technician:</span>
+                      <span className="technician-name">{getTechnicianName(ticket.technician_id)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
