@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
+import './App.css'
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/$/, '')
 
-function Tickets() {
+function Requests() {
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -63,107 +64,263 @@ function Tickets() {
   }
 
   return (
-    <div>
-      <section style={{ marginBottom: 24 }}>
-        <h2>Submit a new ticket</h2>
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 8 }}>
-          <label>
-            Description
-            <textarea value={text} onChange={e => setText(e.target.value)} rows={4} style={{ width: '100%' }} />
-          </label>
-          <label>
-            Photo URL (optional)
-            <input value={photoUrl} onChange={e => setPhotoUrl(e.target.value)} style={{ width: '100%' }} />
-          </label>
-          <label>
-            Tenant ID (optional)
-            <input value={tenantId} onChange={e => setTenantId(e.target.value)} style={{ width: '100%' }} />
-          </label>
-          <div>
-            <button type="submit" disabled={submitting}>{submitting ? 'Submitting…' : 'Submit ticket'}</button>
-            <button type="button" onClick={loadTickets} style={{ marginLeft: 8 }}>Refresh</button>
+    <div className="tab-content">
+      <div className="section">
+        <h2>Submit a New Request</h2>
+        <form onSubmit={handleSubmit} className="request-form">
+          <div className="form-group">
+            <label htmlFor="description">Description *</label>
+            <textarea 
+              id="description"
+              value={text} 
+              onChange={e => setText(e.target.value)} 
+              rows={4} 
+              placeholder="Describe your maintenance request in detail..."
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="photoUrl">Photo URL (optional)</label>
+            <input 
+              id="photoUrl"
+              type="url"
+              value={photoUrl} 
+              onChange={e => setPhotoUrl(e.target.value)} 
+              placeholder="https://example.com/photo.jpg"
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="tenantId">Tenant ID (optional)</label>
+            <input 
+              id="tenantId"
+              value={tenantId} 
+              onChange={e => setTenantId(e.target.value)} 
+              placeholder="Enter your tenant ID"
+            />
+          </div>
+          <div className="form-actions">
+            <button type="submit" disabled={submitting} className="btn btn-primary">
+              {submitting ? 'Submitting...' : 'Submit Request'}
+            </button>
+            <button type="button" onClick={loadTickets} className="btn btn-secondary">
+              Refresh
+            </button>
           </div>
         </form>
-        {error && <p style={{ color: 'crimson' }}>{error}</p>}
-      </section>
+        {error && <div className="error-message">{error}</div>}
+      </div>
 
-      <section>
-        <h2>Recent tickets</h2>
+      <div className="section">
+        <h2>Recent Requests</h2>
         {loading ? (
-          <p>Loading…</p>
+          <div className="loading">Loading requests...</div>
         ) : tickets.length === 0 ? (
-          <p>No tickets yet — submit one above.</p>
+          <div className="empty-state">No requests yet — submit one above.</div>
         ) : (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+          <div className="tickets-list">
             {tickets.map(t => (
-              <li key={t.id} style={{ border: '1px solid #ddd', padding: 12, marginBottom: 8, borderRadius: 6 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                  <strong>{t.category ?? 'Uncategorized'}</strong>
-                  <small>{t.created_at ? new Date(t.created_at).toLocaleString() : ''}</small>
+              <div key={t.id} className="ticket-card">
+                <div className="ticket-header">
+                  <span className="ticket-category">{t.category ?? 'Uncategorized'}</span>
+                  <span className="ticket-date">
+                    {t.created_at ? new Date(t.created_at).toLocaleString() : ''}
+                  </span>
                 </div>
-                <p style={{ margin: '8px 0' }}>{t.description}</p>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                  <small>Status: {t.status}</small>
-                  <small>Severity: {t.severity}</small>
+                <p className="ticket-description">{t.description}</p>
+                <div className="ticket-meta">
+                  <span className={`status status-${t.status?.toLowerCase()}`}>
+                    {t.status}
+                  </span>
+                  <span className={`severity severity-${t.severity?.toLowerCase()}`}>
+                    {t.severity}
+                  </span>
                 </div>
                 {t.photo_url && (
-                  <div style={{ marginTop: 8 }}>
-                    <img src={t.photo_url} alt="ticket" style={{ maxWidth: 240, borderRadius: 4 }} />
+                  <div className="ticket-photo">
+                    <img src={t.photo_url} alt="Request photo" />
                   </div>
                 )}
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
-      </section>
+      </div>
     </div>
   )
 }
 
-function MaintenancePlaceholder({ title }) {
+function MaintenanceTimes() {
   return (
-    <div style={{ padding: 24 }}>
-      <h2>{title}</h2>
-      <p>This page is under maintenance. We'll have this feature available soon.</p>
+    <div className="tab-content">
+      <div className="section">
+        <h2>Maintenance Times</h2>
+        <div className="maintenance-info">
+          <div className="info-card">
+            <h3>Regular Maintenance Hours</h3>
+            <p>Monday - Friday: 8:00 AM - 5:00 PM</p>
+            <p>Saturday: 9:00 AM - 3:00 PM</p>
+            <p>Sunday: Emergency only</p>
+          </div>
+          <div className="info-card">
+            <h3>Emergency Maintenance</h3>
+            <p>Available 24/7 for urgent issues</p>
+            <p>Call: (555) 123-MAINT</p>
+          </div>
+          <div className="info-card">
+            <h3>Scheduled Maintenance</h3>
+            <p>Monthly building inspections: First Monday of each month</p>
+            <p>HVAC maintenance: Quarterly</p>
+            <p>Elevator service: Bi-weekly</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Payments() {
+  return (
+    <div className="tab-content">
+      <div className="section">
+        <h2>Payment Center</h2>
+        <div className="payment-info">
+          <div className="info-card">
+            <h3>Current Balance</h3>
+            <div className="balance-display">
+              <span className="balance-amount">$0.00</span>
+              <p>No outstanding payments</p>
+            </div>
+          </div>
+          <div className="info-card">
+            <h3>Payment Methods</h3>
+            <p>Credit Card, Bank Transfer, Check</p>
+            <button className="btn btn-primary">Add Payment Method</button>
+          </div>
+          <div className="info-card">
+            <h3>Payment History</h3>
+            <p>No recent payments to display</p>
+            <button className="btn btn-secondary">View Full History</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Chat() {
+  const [messages, setMessages] = useState([
+    { id: 1, text: "Welcome to Nebula PM Chat! How can we help you today?", sender: 'system', timestamp: new Date() }
+  ])
+  const [newMessage, setNewMessage] = useState('')
+
+  const handleSendMessage = (e) => {
+    e.preventDefault()
+    if (!newMessage.trim()) return
+    
+    const message = {
+      id: messages.length + 1,
+      text: newMessage,
+      sender: 'user',
+      timestamp: new Date()
+    }
+    
+    setMessages([...messages, message])
+    setNewMessage('')
+    
+    // Simulate response
+    setTimeout(() => {
+      const response = {
+        id: messages.length + 2,
+        text: "Thank you for your message. Our team will get back to you shortly.",
+        sender: 'system',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, response])
+    }, 1000)
+  }
+
+  return (
+    <div className="tab-content">
+      <div className="section">
+        <h2>Live Chat Support</h2>
+        <div className="chat-container">
+          <div className="chat-messages">
+            {messages.map(message => (
+              <div key={message.id} className={`message ${message.sender}`}>
+                <div className="message-content">
+                  {message.text}
+                </div>
+                <div className="message-time">
+                  {message.timestamp.toLocaleTimeString()}
+                </div>
+              </div>
+            ))}
+          </div>
+          <form onSubmit={handleSendMessage} className="chat-input">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={e => setNewMessage(e.target.value)}
+              placeholder="Type your message..."
+              className="message-input"
+            />
+            <button type="submit" className="btn btn-primary">Send</button>
+          </form>
+        </div>
+      </div>
     </div>
   )
 }
 
 export default function App() {
-  const tabs = ['Requests', 'Maintenance Times', 'Payments', 'Chat']
-  const [active, setActive] = useState('Requests')
+  const tabs = [
+    { id: 'requests', label: 'Requests', icon: '📋' },
+    { id: 'maintenance', label: 'Maintenance Times', icon: '🕒' },
+    { id: 'payments', label: 'Payments', icon: '💳' },
+    { id: 'chat', label: 'Chat', icon: '💬' }
+  ]
+  const [activeTab, setActiveTab] = useState('requests')
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'requests':
+        return <Requests />
+      case 'maintenance':
+        return <MaintenanceTimes />
+      case 'payments':
+        return <Payments />
+      case 'chat':
+        return <Chat />
+      default:
+        return <Requests />
+    }
+  }
 
   return (
-    <div style={{ maxWidth: 1000, margin: '24px auto', padding: '0 16px', fontFamily: 'system-ui, sans-serif' }}>
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h1 style={{ margin: 0 }}>Nebula PM</h1>
-        <nav>
-          {tabs.map(t => (
-            <button
-              key={t}
-              onClick={() => setActive(t)}
-              style={{
-                marginLeft: 8,
-                padding: '8px 12px',
-                background: active === t ? '#0b6efd' : 'transparent',
-                color: active === t ? 'white' : '#0b6efd',
-                border: '1px solid #0b6efd',
-                borderRadius: 6,
-                cursor: 'pointer',
-              }}
-            >
-              {t}
-            </button>
-          ))}
-        </nav>
+    <div className="app">
+      <header className="app-header">
+        <div className="header-content">
+          <h1 className="app-title">
+            <span className="logo">🏢</span>
+            Nebula Property Management
+          </h1>
+          <nav className="tab-navigation">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
+              >
+                <span className="tab-icon">{tab.icon}</span>
+                <span className="tab-label">{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
       </header>
 
-      <main style={{ marginTop: 18 }}>
-        {active === 'Requests' ? (
-          <Tickets />
-        ) : (
-          <MaintenancePlaceholder title={active} />
-        )}
+      <main className="app-main">
+        {renderTabContent()}
       </main>
     </div>
   )
