@@ -222,267 +222,80 @@ function Requests() {
 }
 
 function MaintenanceTimes() {
-  const [tickets, setTickets] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [filter, setFilter] = useState('all') // all, past, present, future
-
-  useEffect(() => {
-    loadTickets()
-  }, [])
-
-  async function loadTickets() {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch(`${API_BASE}/tickets`)
-      if (!res.ok) throw new Error(await res.text())
-      const body = await res.json()
-      setTickets(body.tickets ?? [])
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Categorize tickets by time
-  const now = new Date()
-  const categorizedTickets = {
-    past: tickets.filter(ticket => {
-      if (ticket.status === 'Completed') return true
-      if (ticket.scheduled_at) {
-        return new Date(ticket.scheduled_at) < now
-      }
-      return false
-    }),
-    present: tickets.filter(ticket => {
-      if (ticket.status === 'Triaged' || ticket.status === 'Scheduled') {
-        if (ticket.scheduled_at) {
-          const scheduledDate = new Date(ticket.scheduled_at)
-          const today = new Date()
-          today.setHours(0, 0, 0, 0)
-          const tomorrow = new Date(today)
-          tomorrow.setDate(tomorrow.getDate() + 1)
-          return scheduledDate >= today && scheduledDate < tomorrow
-        }
-        return true
-      }
-      return false
-    }),
-    future: tickets.filter(ticket => {
-      if (ticket.scheduled_at) {
-        const scheduledDate = new Date(ticket.scheduled_at)
-        const tomorrow = new Date()
-        tomorrow.setDate(tomorrow.getDate() + 1)
-        tomorrow.setHours(0, 0, 0, 0)
-        return scheduledDate >= tomorrow
-      }
-      return false
-    })
-  }
-
-  const filteredTickets = filter === 'all' ? tickets : categorizedTickets[filter]
-
-  const getStatusColor = (status, severity) => {
-    if (status === 'Completed') return 'completed'
-    if (status === 'Scheduled') return 'scheduled'
-    if (severity === 'high') return 'urgent'
-    return 'pending'
-  }
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'Completed': return '✅'
-      case 'Scheduled': return '📅'
-      case 'Triaged': return '⏳'
-      default: return '🔧'
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="maintenance-page">
-        <div className="page-header">
-          <h1 className="page-title">
-            <span className="page-icon">🔧</span>
-            Maintenance Management
-          </h1>
-          <p className="page-subtitle">Comprehensive maintenance tracking and scheduling</p>
-        </div>
-        <div className="maintenance-content">
-          <div className="loading-state">
-            <div className="loading-spinner"></div>
-            <p>Loading maintenance data...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="maintenance-page">
       <div className="page-header">
         <h1 className="page-title">
           <span className="page-icon">🔧</span>
-          Maintenance Management
+          Maintenance Schedule
         </h1>
-        <p className="page-subtitle">Comprehensive maintenance tracking and scheduling</p>
+        <p className="page-subtitle">View maintenance hours and scheduled services</p>
       </div>
 
       <div className="maintenance-content">
-        {/* Filter Tabs */}
-        <div className="maintenance-filters">
-          <button 
-            className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            All ({tickets.length})
-          </button>
-          <button 
-            className={`filter-tab ${filter === 'past' ? 'active' : ''}`}
-            onClick={() => setFilter('past')}
-          >
-            Past ({categorizedTickets.past.length})
-          </button>
-          <button 
-            className={`filter-tab ${filter === 'present' ? 'active' : ''}`}
-            onClick={() => setFilter('present')}
-          >
-            Present ({categorizedTickets.present.length})
-          </button>
-          <button 
-            className={`filter-tab ${filter === 'future' ? 'active' : ''}`}
-            onClick={() => setFilter('future')}
-          >
-            Future ({categorizedTickets.future.length})
-          </button>
-        </div>
-
-        {/* Maintenance Hours Info */}
-        <div className="maintenance-info-section">
-          <div className="maintenance-grid">
-            <div className="maintenance-card">
-              <div className="card-header">
-                <div className="card-icon">⏰</div>
-                <h3 className="card-title">Regular Hours</h3>
-              </div>
-              <div className="card-content">
-                <div className="schedule-item">
-                  <span className="schedule-days">Monday - Friday</span>
-                  <span className="schedule-time">8:00 AM - 5:00 PM</span>
-                </div>
-                <div className="schedule-item">
-                  <span className="schedule-days">Saturday</span>
-                  <span className="schedule-time">9:00 AM - 3:00 PM</span>
-                </div>
-                <div className="schedule-item">
-                  <span className="schedule-days">Sunday</span>
-                  <span className="schedule-time">Emergency only</span>
-                </div>
-              </div>
+        <div className="maintenance-grid">
+          <div className="maintenance-card">
+            <div className="card-header">
+              <div className="card-icon">⏰</div>
+              <h3 className="card-title">Regular Hours</h3>
             </div>
-
-            <div className="maintenance-card emergency">
-              <div className="card-header">
-                <div className="card-icon">🚨</div>
-                <h3 className="card-title">Emergency Services</h3>
+            <div className="card-content">
+              <div className="schedule-item">
+                <span className="schedule-days">Monday - Friday</span>
+                <span className="schedule-time">8:00 AM - 5:00 PM</span>
               </div>
-              <div className="card-content">
-                <div className="emergency-text">
-                  <p>Available 24/7 for urgent maintenance issues that pose safety risks or property damage.</p>
-                  <div className="contact-info">
-                    <div className="contact-label">Emergency Hotline:</div>
-                    <div className="contact-value">(555) 911-MAINT</div>
-                  </div>
-                  <div className="contact-info">
-                    <div className="contact-label">Response Time:</div>
-                    <div className="contact-value">Within 2 hours</div>
-                  </div>
-                  <div className="emergency-note">
-                    <strong>Note:</strong> Emergency services are for urgent issues only. Non-emergency requests will be charged at emergency rates.
-                  </div>
-                </div>
+              <div className="schedule-item">
+                <span className="schedule-days">Saturday</span>
+                <span className="schedule-time">9:00 AM - 3:00 PM</span>
+              </div>
+              <div className="schedule-item">
+                <span className="schedule-days">Sunday</span>
+                <span className="schedule-time">Emergency only</span>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Maintenance Requests List */}
-        <div className="maintenance-requests-section">
-          <h3 className="section-title">
-            {filter === 'all' && 'All Maintenance Requests'}
-            {filter === 'past' && 'Past Maintenance'}
-            {filter === 'present' && 'Current Maintenance'}
-            {filter === 'future' && 'Scheduled Maintenance'}
-          </h3>
+          <div className="maintenance-card emergency">
+            <div className="card-header">
+              <div className="card-icon">🚨</div>
+              <h3 className="card-title">Emergency Service</h3>
+            </div>
+            <div className="card-content">
+              <p className="emergency-text">Available 24/7 for urgent issues</p>
+              <div className="contact-info">
+                <span className="contact-label">Emergency Hotline:</span>
+                <span className="contact-value">(555) 123-MAINT</span>
+              </div>
+              <div className="emergency-note">
+                <strong>Note:</strong> Emergency calls are for urgent safety issues only
+              </div>
+            </div>
+          </div>
 
-          {error ? (
-            <div className="alert alert-error">
-              <p>Error loading maintenance requests: {error}</p>
-              <button onClick={loadTickets} className="btn btn-sm">Retry</button>
+          <div className="maintenance-card">
+            <div className="card-header">
+              <div className="card-icon">📅</div>
+              <h3 className="card-title">Scheduled Services</h3>
             </div>
-          ) : filteredTickets.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">🔧</div>
-              <h3>No maintenance requests found</h3>
-              <p>
-                {filter === 'all' && 'No maintenance requests have been submitted yet.'}
-                {filter === 'past' && 'No completed maintenance requests found.'}
-                {filter === 'present' && 'No current maintenance requests found.'}
-                {filter === 'future' && 'No scheduled maintenance requests found.'}
-              </p>
+            <div className="card-content">
+              <div className="service-item">
+                <span className="service-name">Building Inspections</span>
+                <span className="service-frequency">Monthly (1st Monday)</span>
+              </div>
+              <div className="service-item">
+                <span className="service-name">HVAC Maintenance</span>
+                <span className="service-frequency">Quarterly</span>
+              </div>
+              <div className="service-item">
+                <span className="service-name">Elevator Service</span>
+                <span className="service-frequency">Bi-weekly</span>
+              </div>
+              <div className="service-item">
+                <span className="service-name">Fire Safety Check</span>
+                <span className="service-frequency">Monthly</span>
+              </div>
             </div>
-          ) : (
-            <div className="maintenance-requests-grid">
-              {filteredTickets.map(ticket => (
-                <div key={ticket.id} className={`maintenance-request-card ${getStatusColor(ticket.status, ticket.severity)}`}>
-                  <div className="request-header">
-                    <div className="request-status">
-                      <span className="status-icon">{getStatusIcon(ticket.status)}</span>
-                      <span className="status-text">{ticket.status}</span>
-                    </div>
-                    <div className="request-meta">
-                      <span className="request-category">{ticket.category}</span>
-                      <span className={`severity-badge ${ticket.severity}`}>
-                        {ticket.severity}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="request-content">
-                    <p className="request-description">{ticket.description}</p>
-                    {ticket.photo_url && (
-                      <div className="request-photo">
-                        <img src={ticket.photo_url} alt="Request photo" />
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="request-footer">
-                    <div className="request-dates">
-                      <div className="date-item">
-                        <span className="date-label">Created:</span>
-                        <span className="date-value">{formatDate(ticket.created_at)}</span>
-                      </div>
-                      {ticket.scheduled_at && (
-                        <div className="date-item">
-                          <span className="date-label">Scheduled:</span>
-                          <span className="date-value">{formatDate(ticket.scheduled_at)}</span>
-                        </div>
-                      )}
-                    </div>
-                    {ticket.technician_id && (
-                      <div className="request-technician">
-                        <span className="technician-label">Technician:</span>
-                        <span className="technician-name">Assigned</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
@@ -747,144 +560,26 @@ function Chat() {
 
 // New Page Components
 function Dashboard() {
-  const [tickets, setTickets] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    loadTickets()
-  }, [])
-
-  async function loadTickets() {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch(`${API_BASE}/tickets`)
-      if (!res.ok) throw new Error(await res.text())
-      const body = await res.json()
-      setTickets(body.tickets ?? [])
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Calculate maintenance statistics
-  const maintenanceStats = {
-    total: tickets.length,
-    pending: tickets.filter(t => t.status === 'Triaged').length,
-    scheduled: tickets.filter(t => t.status === 'Scheduled').length,
-    completed: tickets.filter(t => t.status === 'Completed').length,
-    highPriority: tickets.filter(t => t.severity === 'high').length,
-    urgent: tickets.filter(t => t.severity === 'high' && t.status === 'Triaged').length
-  }
-
-  // Get recent maintenance requests
-  const recentRequests = tickets.slice(0, 5)
-
-  if (loading) {
-    return (
-      <div className="tab-content">
-        <div className="section">
-          <div className="loading-state">
-            <div className="loading-spinner"></div>
-            <p>Loading dashboard data...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="tab-content">
       <div className="section">
         <h2>Dashboard</h2>
-        
-        {/* Maintenance Status Overview */}
-        <div className="maintenance-overview">
-          <h3>🔧 Maintenance Status</h3>
-          <div className="maintenance-stats-grid">
-            <div className="stat-card">
-              <div className="stat-number">{maintenanceStats.total}</div>
-              <div className="stat-label">Total Requests</div>
-            </div>
-            <div className="stat-card urgent">
-              <div className="stat-number">{maintenanceStats.urgent}</div>
-              <div className="stat-label">Urgent</div>
-            </div>
-            <div className="stat-card pending">
-              <div className="stat-number">{maintenanceStats.pending}</div>
-              <div className="stat-label">Pending</div>
-            </div>
-            <div className="stat-card scheduled">
-              <div className="stat-number">{maintenanceStats.scheduled}</div>
-              <div className="stat-label">Scheduled</div>
-            </div>
-            <div className="stat-card completed">
-              <div className="stat-number">{maintenanceStats.completed}</div>
-              <div className="stat-label">Completed</div>
-            </div>
+        <div className="dashboard-grid">
+          <div className="dashboard-card">
+            <h3>📊 Overview</h3>
+            <p>Welcome to your property management dashboard. Here you can see all your key metrics and recent activity.</p>
           </div>
-        </div>
-
-        {/* Recent Maintenance Requests */}
-        <div className="recent-requests">
-          <h3>📋 Recent Maintenance Requests</h3>
-          {error ? (
-            <div className="alert alert-error">
-              <p>Error loading requests: {error}</p>
-              <button onClick={loadTickets} className="btn btn-sm">Retry</button>
-            </div>
-          ) : recentRequests.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">🔧</div>
-              <h3>No maintenance requests yet</h3>
-              <p>Maintenance requests will appear here once submitted.</p>
-            </div>
-          ) : (
-            <div className="requests-list">
-              {recentRequests.map(ticket => (
-                <div key={ticket.id} className="request-item">
-                  <div className="request-header">
-                    <span className="request-category">{ticket.category}</span>
-                    <span className={`severity-badge ${ticket.severity}`}>
-                      {ticket.severity}
-                    </span>
-                  </div>
-                  <p className="request-description">{ticket.description}</p>
-                  <div className="request-footer">
-                    <span className="request-status">{ticket.status}</span>
-                    <span className="request-date">
-                      {formatDate(ticket.created_at)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="quick-actions">
-          <h3>⚡ Quick Actions</h3>
-          <div className="dashboard-grid">
-            <div className="dashboard-card">
-              <h3>📊 Overview</h3>
-              <p>Welcome to your property management dashboard. Here you can see all your key metrics and recent activity.</p>
-            </div>
-            <div className="dashboard-card">
-              <h3>🏠 Properties</h3>
-              <p>Manage your properties, view occupancy rates, and track maintenance schedules.</p>
-            </div>
-            <div className="dashboard-card">
-              <h3>💰 Financials</h3>
-              <p>Track rent collection, expenses, and financial performance across all properties.</p>
-            </div>
-            <div className="dashboard-card">
-              <h3>📈 Analytics</h3>
-              <p>View detailed reports and analytics to make informed decisions about your properties.</p>
-            </div>
+          <div className="dashboard-card">
+            <h3>🏠 Properties</h3>
+            <p>Manage your properties, view occupancy rates, and track maintenance schedules.</p>
+          </div>
+          <div className="dashboard-card">
+            <h3>💰 Financials</h3>
+            <p>Track rent collection, expenses, and financial performance across all properties.</p>
+          </div>
+          <div className="dashboard-card">
+            <h3>📈 Analytics</h3>
+            <p>View detailed reports and analytics to make informed decisions about your properties.</p>
           </div>
         </div>
       </div>
@@ -1606,7 +1301,7 @@ export default function App() {
       case 'home':
         return <HomeScreen onNavigate={handleNavigate} />
       case 'dashboard':
-        return <Dashboard />
+        return <DashboardPage onNavigate={handleNavigate} />
       case 'requests':
         return <Requests />
       case 'maintenance':
