@@ -3,10 +3,28 @@ import './App.css'
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/$/, '')
 
+// Utility functions
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  })
+}
+
+const formatTime = (date) => {
+  return new Date(date).toLocaleTimeString('en-US', { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  })
+}
+
 function Requests() {
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [success, setSuccess] = useState(null)
 
   const [text, setText] = useState('')
   const [photoUrl, setPhotoUrl] = useState('')
@@ -40,6 +58,7 @@ function Requests() {
     }
     setSubmitting(true)
     setError(null)
+    setSuccess(null)
     try {
       const payload = { text, photoUrl: photoUrl || null, tenantId: tenantId || null }
       const res = await fetch(`${API_BASE}/tickets/ingest`, {
@@ -52,10 +71,13 @@ function Requests() {
         throw new Error(body.error || `Request failed: ${res.status}`)
       }
       const body = await res.json()
-      if (body.request) setTickets(prev => [body.request, ...prev])
-      setText('')
-      setPhotoUrl('')
-      setTenantId('')
+      if (body.request) {
+        setTickets(prev => [body.request, ...prev])
+        setSuccess('Request submitted successfully!')
+        setText('')
+        setPhotoUrl('')
+        setTenantId('')
+      }
     } catch (e) {
       setError(e.message)
     } finally {
@@ -64,114 +86,403 @@ function Requests() {
   }
 
   return (
-    <div className="tab-content">
-      <div className="section">
-        <h2>Submit a New Request</h2>
-        <form onSubmit={handleSubmit} className="request-form">
-          <div className="form-group">
-            <label htmlFor="description">Description *</label>
-            <textarea 
-              id="description"
-              value={text} 
-              onChange={e => setText(e.target.value)} 
-              rows={4} 
-              placeholder="Describe your maintenance request in detail..."
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="photoUrl">Photo URL (optional)</label>
-            <input 
-              id="photoUrl"
-              type="url"
-              value={photoUrl} 
-              onChange={e => setPhotoUrl(e.target.value)} 
-              placeholder="https://example.com/photo.jpg"
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="tenantId">Tenant ID (optional)</label>
-            <input 
-              id="tenantId"
-              value={tenantId} 
-              onChange={e => setTenantId(e.target.value)} 
-              placeholder="Enter your tenant ID"
-            />
-          </div>
-          <div className="form-actions">
-            <button type="submit" disabled={submitting} className="btn btn-primary">
-              {submitting ? 'Submitting...' : 'Submit Request'}
-            </button>
-            <button type="button" onClick={loadTickets} className="btn btn-secondary">
-              Refresh
-            </button>
-          </div>
-        </form>
-        {error && <div className="error-message">{error}</div>}
+    <div className="requests-page">
+      <div className="page-header">
+        <h1 className="page-title">
+          <span className="page-icon">📋</span>
+          Maintenance Requests
+        </h1>
+        <p className="page-subtitle">Submit and track maintenance requests for your property</p>
       </div>
 
-      <div className="section">
-        <h2>Recent Requests</h2>
-        {loading ? (
-          <div className="loading">Loading requests...</div>
-        ) : tickets.length === 0 ? (
-          <div className="empty-state">No requests yet — submit one above.</div>
-        ) : (
-          <div className="tickets-list">
-            {tickets.map(t => (
-              <div key={t.id} className="ticket-card">
-                <div className="ticket-header">
-                  <span className="ticket-category">{t.category ?? 'Uncategorized'}</span>
-                  <span className="ticket-date">
-                    {t.created_at ? new Date(t.created_at).toLocaleString() : ''}
-                  </span>
-                </div>
-                <p className="ticket-description">{t.description}</p>
-                <div className="ticket-meta">
-                  <span className={`status status-${t.status?.toLowerCase()}`}>
-                    {t.status}
-                  </span>
-                  <span className={`severity severity-${t.severity?.toLowerCase()}`}>
-                    {t.severity}
-                  </span>
-                </div>
-                {t.photo_url && (
-                  <div className="ticket-photo">
-                    <img src={t.photo_url} alt="Request photo" />
-                  </div>
-                )}
+      <div className="requests-content">
+        <div className="request-form-section">
+          <div className="form-card">
+            <h2 className="form-title">Submit a New Request</h2>
+            <form onSubmit={handleSubmit} className="request-form">
+              <div className="form-group">
+                <label htmlFor="description">Description *</label>
+                <textarea 
+                  id="description"
+                  value={text} 
+                  onChange={e => setText(e.target.value)} 
+                  rows={4} 
+                  placeholder="Describe your maintenance request in detail..."
+                  required
+                  className="form-textarea"
+                />
+                <div className="form-hint">Minimum 5 characters required</div>
               </div>
-            ))}
+              <div className="form-group">
+                <label htmlFor="photoUrl">Photo URL (optional)</label>
+                <input 
+                  id="photoUrl"
+                  type="url"
+                  value={photoUrl} 
+                  onChange={e => setPhotoUrl(e.target.value)} 
+                  placeholder="https://example.com/photo.jpg"
+                  className="form-input"
+                />
+                <div className="form-hint">Add a photo to help us understand the issue better</div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="tenantId">Tenant ID (optional)</label>
+                <input 
+                  id="tenantId"
+                  value={tenantId} 
+                  onChange={e => setTenantId(e.target.value)} 
+                  placeholder="Enter your tenant ID"
+                  className="form-input"
+                />
+                <div className="form-hint">Your unique tenant identifier</div>
+              </div>
+              <div className="form-actions">
+                <button type="submit" disabled={submitting} className="btn btn-primary btn-large">
+                  <span className="btn-icon">{submitting ? '⏳' : '📤'}</span>
+                  {submitting ? 'Submitting...' : 'Submit Request'}
+                </button>
+                <button type="button" onClick={loadTickets} className="btn btn-secondary">
+                  <span className="btn-icon">🔄</span>
+                  Refresh
+                </button>
+              </div>
+            </form>
+            {error && <div className="alert alert-error">{error}</div>}
+            {success && <div className="alert alert-success">{success}</div>}
           </div>
-        )}
+        </div>
+
+        <div className="tickets-section">
+          <div className="section-header">
+            <h2 className="section-title">Recent Requests</h2>
+            <div className="ticket-stats">
+              <span className="stat-item">
+                <span className="stat-number">{tickets.length}</span>
+                <span className="stat-label">Total Requests</span>
+              </span>
+              <span className="stat-item">
+                <span className="stat-number">{tickets.filter(t => t.status === 'Triaged').length}</span>
+                <span className="stat-label">Pending</span>
+              </span>
+            </div>
+          </div>
+          
+          {loading ? (
+            <div className="loading-state">
+              <div className="loading-spinner"></div>
+              <p>Loading requests...</p>
+            </div>
+          ) : tickets.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">📝</div>
+              <h3>No requests yet</h3>
+              <p>Submit your first maintenance request using the form above.</p>
+            </div>
+          ) : (
+            <div className="tickets-grid">
+              {tickets.map(t => (
+                <div key={t.id} className="ticket-card">
+                  <div className="ticket-header">
+                    <div className="ticket-category-badge">
+                      {t.category ?? 'Uncategorized'}
+                    </div>
+                    <div className="ticket-date">
+                      {t.created_at ? formatDate(t.created_at) : ''}
+                    </div>
+                  </div>
+                  <div className="ticket-content">
+                    <p className="ticket-description">{t.description}</p>
+                    {t.photo_url && (
+                      <div className="ticket-photo">
+                        <img src={t.photo_url} alt="Request photo" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="ticket-footer">
+                    <div className="ticket-status">
+                      <span className={`status-badge status-${t.status?.toLowerCase()}`}>
+                        {t.status}
+                      </span>
+                      <span className={`severity-badge severity-${t.severity?.toLowerCase()}`}>
+                        {t.severity}
+                      </span>
+                    </div>
+                    <div className="ticket-time">
+                      {t.created_at ? formatTime(t.created_at) : ''}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
 }
 
 function MaintenanceTimes() {
+  const [tickets, setTickets] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [filter, setFilter] = useState('all') // all, past, present, future
+
+  useEffect(() => {
+    loadTickets()
+  }, [])
+
+  async function loadTickets() {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`${API_BASE}/tickets`)
+      if (!res.ok) throw new Error(await res.text())
+      const body = await res.json()
+      setTickets(body.tickets ?? [])
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Categorize tickets by time
+  const now = new Date()
+  const categorizedTickets = {
+    past: tickets.filter(ticket => {
+      if (ticket.status === 'Completed') return true
+      if (ticket.scheduled_at) {
+        return new Date(ticket.scheduled_at) < now
+      }
+      return false
+    }),
+    present: tickets.filter(ticket => {
+      if (ticket.status === 'Triaged' || ticket.status === 'Scheduled') {
+        if (ticket.scheduled_at) {
+          const scheduledDate = new Date(ticket.scheduled_at)
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          const tomorrow = new Date(today)
+          tomorrow.setDate(tomorrow.getDate() + 1)
+          return scheduledDate >= today && scheduledDate < tomorrow
+        }
+        return true
+      }
+      return false
+    }),
+    future: tickets.filter(ticket => {
+      if (ticket.scheduled_at) {
+        const scheduledDate = new Date(ticket.scheduled_at)
+        const tomorrow = new Date()
+        tomorrow.setDate(tomorrow.getDate() + 1)
+        tomorrow.setHours(0, 0, 0, 0)
+        return scheduledDate >= tomorrow
+      }
+      return false
+    })
+  }
+
+  const filteredTickets = filter === 'all' ? tickets : categorizedTickets[filter]
+
+  const getStatusColor = (status, severity) => {
+    if (status === 'Completed') return 'completed'
+    if (status === 'Scheduled') return 'scheduled'
+    if (severity === 'high') return 'urgent'
+    return 'pending'
+  }
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'Completed': return '✅'
+      case 'Scheduled': return '📅'
+      case 'Triaged': return '⏳'
+      default: return '🔧'
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="maintenance-page">
+        <div className="page-header">
+          <h1 className="page-title">
+            <span className="page-icon">🔧</span>
+            Maintenance Management
+          </h1>
+          <p className="page-subtitle">Comprehensive maintenance tracking and scheduling</p>
+        </div>
+        <div className="maintenance-content">
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <p>Loading maintenance data...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="tab-content">
-      <div className="section">
-        <h2>Maintenance Times</h2>
-        <div className="maintenance-info">
-          <div className="info-card">
-            <h3>Regular Maintenance Hours</h3>
-            <p>Monday - Friday: 8:00 AM - 5:00 PM</p>
-            <p>Saturday: 9:00 AM - 3:00 PM</p>
-            <p>Sunday: Emergency only</p>
+    <div className="maintenance-page">
+      <div className="page-header">
+        <h1 className="page-title">
+          <span className="page-icon">🔧</span>
+          Maintenance Management
+        </h1>
+        <p className="page-subtitle">Comprehensive maintenance tracking and scheduling</p>
+      </div>
+
+      <div className="maintenance-content">
+        {/* Filter Tabs */}
+        <div className="maintenance-filters">
+          <button 
+            className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            All ({tickets.length})
+          </button>
+          <button 
+            className={`filter-tab ${filter === 'past' ? 'active' : ''}`}
+            onClick={() => setFilter('past')}
+          >
+            Past ({categorizedTickets.past.length})
+          </button>
+          <button 
+            className={`filter-tab ${filter === 'present' ? 'active' : ''}`}
+            onClick={() => setFilter('present')}
+          >
+            Present ({categorizedTickets.present.length})
+          </button>
+          <button 
+            className={`filter-tab ${filter === 'future' ? 'active' : ''}`}
+            onClick={() => setFilter('future')}
+          >
+            Future ({categorizedTickets.future.length})
+          </button>
+        </div>
+
+        {/* Maintenance Hours Info */}
+        <div className="maintenance-info-section">
+          <div className="maintenance-grid">
+            <div className="maintenance-card">
+              <div className="card-header">
+                <div className="card-icon">⏰</div>
+                <h3 className="card-title">Regular Hours</h3>
+              </div>
+              <div className="card-content">
+                <div className="schedule-item">
+                  <span className="schedule-days">Monday - Friday</span>
+                  <span className="schedule-time">8:00 AM - 5:00 PM</span>
+                </div>
+                <div className="schedule-item">
+                  <span className="schedule-days">Saturday</span>
+                  <span className="schedule-time">9:00 AM - 3:00 PM</span>
+                </div>
+                <div className="schedule-item">
+                  <span className="schedule-days">Sunday</span>
+                  <span className="schedule-time">Emergency only</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="maintenance-card emergency">
+              <div className="card-header">
+                <div className="card-icon">🚨</div>
+                <h3 className="card-title">Emergency Services</h3>
+              </div>
+              <div className="card-content">
+                <div className="emergency-text">
+                  <p>Available 24/7 for urgent maintenance issues that pose safety risks or property damage.</p>
+                  <div className="contact-info">
+                    <div className="contact-label">Emergency Hotline:</div>
+                    <div className="contact-value">(555) 911-MAINT</div>
+                  </div>
+                  <div className="contact-info">
+                    <div className="contact-label">Response Time:</div>
+                    <div className="contact-value">Within 2 hours</div>
+                  </div>
+                  <div className="emergency-note">
+                    <strong>Note:</strong> Emergency services are for urgent issues only. Non-emergency requests will be charged at emergency rates.
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="info-card">
-            <h3>Emergency Maintenance</h3>
-            <p>Available 24/7 for urgent issues</p>
-            <p>Call: (555) 123-MAINT</p>
-          </div>
-          <div className="info-card">
-            <h3>Scheduled Maintenance</h3>
-            <p>Monthly building inspections: First Monday of each month</p>
-            <p>HVAC maintenance: Quarterly</p>
-            <p>Elevator service: Bi-weekly</p>
-          </div>
+        </div>
+
+        {/* Maintenance Requests List */}
+        <div className="maintenance-requests-section">
+          <h3 className="section-title">
+            {filter === 'all' && 'All Maintenance Requests'}
+            {filter === 'past' && 'Past Maintenance'}
+            {filter === 'present' && 'Current Maintenance'}
+            {filter === 'future' && 'Scheduled Maintenance'}
+          </h3>
+
+          {error ? (
+            <div className="alert alert-error">
+              <p>Error loading maintenance requests: {error}</p>
+              <button onClick={loadTickets} className="btn btn-sm">Retry</button>
+            </div>
+          ) : filteredTickets.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">🔧</div>
+              <h3>No maintenance requests found</h3>
+              <p>
+                {filter === 'all' && 'No maintenance requests have been submitted yet.'}
+                {filter === 'past' && 'No completed maintenance requests found.'}
+                {filter === 'present' && 'No current maintenance requests found.'}
+                {filter === 'future' && 'No scheduled maintenance requests found.'}
+              </p>
+            </div>
+          ) : (
+            <div className="maintenance-requests-grid">
+              {filteredTickets.map(ticket => (
+                <div key={ticket.id} className={`maintenance-request-card ${getStatusColor(ticket.status, ticket.severity)}`}>
+                  <div className="request-header">
+                    <div className="request-status">
+                      <span className="status-icon">{getStatusIcon(ticket.status)}</span>
+                      <span className="status-text">{ticket.status}</span>
+                    </div>
+                    <div className="request-meta">
+                      <span className="request-category">{ticket.category}</span>
+                      <span className={`severity-badge ${ticket.severity}`}>
+                        {ticket.severity}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="request-content">
+                    <p className="request-description">{ticket.description}</p>
+                    {ticket.photo_url && (
+                      <div className="request-photo">
+                        <img src={ticket.photo_url} alt="Request photo" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="request-footer">
+                    <div className="request-dates">
+                      <div className="date-item">
+                        <span className="date-label">Created:</span>
+                        <span className="date-value">{formatDate(ticket.created_at)}</span>
+                      </div>
+                      {ticket.scheduled_at && (
+                        <div className="date-item">
+                          <span className="date-label">Scheduled:</span>
+                          <span className="date-value">{formatDate(ticket.scheduled_at)}</span>
+                        </div>
+                      )}
+                    </div>
+                    {ticket.technician_id && (
+                      <div className="request-technician">
+                        <span className="technician-label">Technician:</span>
+                        <span className="technician-name">Assigned</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -179,27 +490,124 @@ function MaintenanceTimes() {
 }
 
 function Payments() {
+  const [balance] = useState(0.00)
+  const [recentPayments] = useState([])
+  
   return (
-    <div className="tab-content">
-      <div className="section">
-        <h2>Payment Center</h2>
-        <div className="payment-info">
-          <div className="info-card">
-            <h3>Current Balance</h3>
-            <div className="balance-display">
-              <span className="balance-amount">$0.00</span>
-              <p>No outstanding payments</p>
+    <div className="payments-page">
+      <div className="page-header">
+        <h1 className="page-title">
+          <span className="page-icon">💳</span>
+          Payment Center
+        </h1>
+        <p className="page-subtitle">Manage your payments and billing information</p>
+      </div>
+
+      <div className="payments-content">
+        <div className="balance-section">
+          <div className="balance-card">
+            <div className="balance-header">
+              <h2 className="balance-title">Current Balance</h2>
+              <div className="balance-status">All caught up!</div>
+            </div>
+            <div className="balance-amount">
+              <span className="currency">$</span>
+              <span className="amount">{balance.toFixed(2)}</span>
+            </div>
+            <p className="balance-description">No outstanding payments at this time</p>
+          </div>
+        </div>
+
+        <div className="payments-grid">
+          <div className="payment-card">
+            <div className="card-header">
+              <div className="card-icon">💳</div>
+              <h3 className="card-title">Payment Methods</h3>
+            </div>
+            <div className="card-content">
+              <div className="payment-methods">
+                <div className="method-item">
+                  <span className="method-icon">💳</span>
+                  <span className="method-name">Credit Card</span>
+                  <span className="method-status">Active</span>
+                </div>
+                <div className="method-item">
+                  <span className="method-icon">🏦</span>
+                  <span className="method-name">Bank Transfer</span>
+                  <span className="method-status">Active</span>
+                </div>
+                <div className="method-item">
+                  <span className="method-icon">📄</span>
+                  <span className="method-name">Check</span>
+                  <span className="method-status">Active</span>
+                </div>
+              </div>
+              <button className="btn btn-primary btn-full">
+                <span className="btn-icon">➕</span>
+                Add Payment Method
+              </button>
             </div>
           </div>
-          <div className="info-card">
-            <h3>Payment Methods</h3>
-            <p>Credit Card, Bank Transfer, Check</p>
-            <button className="btn btn-primary">Add Payment Method</button>
+
+          <div className="payment-card">
+            <div className="card-header">
+              <div className="card-icon">📊</div>
+              <h3 className="card-title">Payment History</h3>
+            </div>
+            <div className="card-content">
+              {recentPayments.length === 0 ? (
+                <div className="empty-history">
+                  <div className="empty-icon">📝</div>
+                  <p>No recent payments to display</p>
+                </div>
+              ) : (
+                <div className="payment-list">
+                  {recentPayments.map((payment, index) => (
+                    <div key={index} className="payment-item">
+                      <div className="payment-info">
+                        <span className="payment-description">{payment.description}</span>
+                        <span className="payment-date">{payment.date}</span>
+                      </div>
+                      <span className="payment-amount">${payment.amount}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button className="btn btn-secondary btn-full">
+                <span className="btn-icon">📋</span>
+                View Full History
+              </button>
+            </div>
           </div>
-          <div className="info-card">
-            <h3>Payment History</h3>
-            <p>No recent payments to display</p>
-            <button className="btn btn-secondary">View Full History</button>
+
+          <div className="payment-card">
+            <div className="card-header">
+              <div className="card-icon">⚙️</div>
+              <h3 className="card-title">Billing Settings</h3>
+            </div>
+            <div className="card-content">
+              <div className="setting-item">
+                <span className="setting-label">Auto-pay</span>
+                <label className="toggle-switch">
+                  <input type="checkbox" />
+                  <span className="toggle-slider"></span>
+                </label>
+              </div>
+              <div className="setting-item">
+                <span className="setting-label">Email notifications</span>
+                <label className="toggle-switch">
+                  <input type="checkbox" defaultChecked />
+                  <span className="toggle-slider"></span>
+                </label>
+              </div>
+              <div className="setting-item">
+                <span className="setting-label">Paperless billing</span>
+                <label className="toggle-switch">
+                  <input type="checkbox" defaultChecked />
+                  <span className="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -209,9 +617,16 @@ function Payments() {
 
 function Chat() {
   const [messages, setMessages] = useState([
-    { id: 1, text: "Welcome to Nebula PM Chat! How can we help you today?", sender: 'system', timestamp: new Date() }
+    { 
+      id: 1, 
+      text: "Welcome to Nebula STAT Chat! How can we help you today?", 
+      sender: 'system', 
+      timestamp: new Date(),
+      avatar: '🤖'
+    }
   ])
   const [newMessage, setNewMessage] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
 
   const handleSendMessage = (e) => {
     e.preventDefault()
@@ -221,52 +636,110 @@ function Chat() {
       id: messages.length + 1,
       text: newMessage,
       sender: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
+      avatar: '👤'
     }
     
-    setMessages([...messages, message])
+    setMessages(prev => [...prev, message])
     setNewMessage('')
+    setIsTyping(true)
     
     // Simulate response
     setTimeout(() => {
+      const responses = [
+        "Thank you for your message. Our team will get back to you shortly.",
+        "I understand your concern. Let me help you with that.",
+        "That's a great question! Let me check our records for you.",
+        "I'll forward this to our maintenance team right away.",
+        "Is there anything else I can help you with today?"
+      ]
+      
       const response = {
         id: messages.length + 2,
-        text: "Thank you for your message. Our team will get back to you shortly.",
+        text: responses[Math.floor(Math.random() * responses.length)],
         sender: 'system',
-        timestamp: new Date()
+        timestamp: new Date(),
+        avatar: '🤖'
       }
       setMessages(prev => [...prev, response])
-    }, 1000)
+      setIsTyping(false)
+    }, 1500)
   }
 
   return (
-    <div className="tab-content">
-      <div className="section">
-        <h2>Live Chat Support</h2>
-        <div className="chat-container">
-          <div className="chat-messages">
-            {messages.map(message => (
-              <div key={message.id} className={`message ${message.sender}`}>
+    <div className="chat-page">
+      <div className="page-header">
+        <h1 className="page-title">
+          <span className="page-icon">💬</span>
+          Live Chat Support
+        </h1>
+        <p className="page-subtitle">Get instant help from our support team</p>
+      </div>
+
+      <div className="chat-container">
+        <div className="chat-header">
+          <div className="chat-status">
+            <div className="status-indicator online"></div>
+            <span className="status-text">Support team online</span>
+          </div>
+          <div className="chat-actions">
+            <button className="btn btn-secondary btn-sm">
+              <span className="btn-icon">📞</span>
+              Call Support
+            </button>
+          </div>
+        </div>
+
+        <div className="chat-messages">
+          {messages.map(message => (
+            <div key={message.id} className={`message ${message.sender}`}>
+              <div className="message-avatar">
+                {message.avatar}
+              </div>
+              <div className="message-bubble">
                 <div className="message-content">
                   {message.text}
                 </div>
                 <div className="message-time">
-                  {message.timestamp.toLocaleTimeString()}
+                  {formatTime(message.timestamp)}
                 </div>
               </div>
-            ))}
-          </div>
-          <form onSubmit={handleSendMessage} className="chat-input">
+            </div>
+          ))}
+          {isTyping && (
+            <div className="message system">
+              <div className="message-avatar">🤖</div>
+              <div className="message-bubble">
+                <div className="typing-indicator">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <form onSubmit={handleSendMessage} className="chat-input">
+          <div className="input-group">
             <input
               type="text"
               value={newMessage}
               onChange={e => setNewMessage(e.target.value)}
               placeholder="Type your message..."
               className="message-input"
+              disabled={isTyping}
             />
-            <button type="submit" className="btn btn-primary">Send</button>
-          </form>
-        </div>
+            <button 
+              type="submit" 
+              className="btn btn-primary send-button"
+              disabled={!newMessage.trim() || isTyping}
+            >
+              <span className="btn-icon">📤</span>
+              Send
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
@@ -274,26 +747,144 @@ function Chat() {
 
 // New Page Components
 function Dashboard() {
+  const [tickets, setTickets] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    loadTickets()
+  }, [])
+
+  async function loadTickets() {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`${API_BASE}/tickets`)
+      if (!res.ok) throw new Error(await res.text())
+      const body = await res.json()
+      setTickets(body.tickets ?? [])
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Calculate maintenance statistics
+  const maintenanceStats = {
+    total: tickets.length,
+    pending: tickets.filter(t => t.status === 'Triaged').length,
+    scheduled: tickets.filter(t => t.status === 'Scheduled').length,
+    completed: tickets.filter(t => t.status === 'Completed').length,
+    highPriority: tickets.filter(t => t.severity === 'high').length,
+    urgent: tickets.filter(t => t.severity === 'high' && t.status === 'Triaged').length
+  }
+
+  // Get recent maintenance requests
+  const recentRequests = tickets.slice(0, 5)
+
+  if (loading) {
+    return (
+      <div className="tab-content">
+        <div className="section">
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <p>Loading dashboard data...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="tab-content">
       <div className="section">
         <h2>Dashboard</h2>
-        <div className="dashboard-grid">
-          <div className="dashboard-card">
-            <h3>📊 Overview</h3>
-            <p>Welcome to your property management dashboard. Here you can see all your key metrics and recent activity.</p>
+        
+        {/* Maintenance Status Overview */}
+        <div className="maintenance-overview">
+          <h3>🔧 Maintenance Status</h3>
+          <div className="maintenance-stats-grid">
+            <div className="stat-card">
+              <div className="stat-number">{maintenanceStats.total}</div>
+              <div className="stat-label">Total Requests</div>
+            </div>
+            <div className="stat-card urgent">
+              <div className="stat-number">{maintenanceStats.urgent}</div>
+              <div className="stat-label">Urgent</div>
+            </div>
+            <div className="stat-card pending">
+              <div className="stat-number">{maintenanceStats.pending}</div>
+              <div className="stat-label">Pending</div>
+            </div>
+            <div className="stat-card scheduled">
+              <div className="stat-number">{maintenanceStats.scheduled}</div>
+              <div className="stat-label">Scheduled</div>
+            </div>
+            <div className="stat-card completed">
+              <div className="stat-number">{maintenanceStats.completed}</div>
+              <div className="stat-label">Completed</div>
+            </div>
           </div>
-          <div className="dashboard-card">
-            <h3>🏠 Properties</h3>
-            <p>Manage your properties, view occupancy rates, and track maintenance schedules.</p>
-          </div>
-          <div className="dashboard-card">
-            <h3>💰 Financials</h3>
-            <p>Track rent collection, expenses, and financial performance across all properties.</p>
-          </div>
-          <div className="dashboard-card">
-            <h3>📈 Analytics</h3>
-            <p>View detailed reports and analytics to make informed decisions about your properties.</p>
+        </div>
+
+        {/* Recent Maintenance Requests */}
+        <div className="recent-requests">
+          <h3>📋 Recent Maintenance Requests</h3>
+          {error ? (
+            <div className="alert alert-error">
+              <p>Error loading requests: {error}</p>
+              <button onClick={loadTickets} className="btn btn-sm">Retry</button>
+            </div>
+          ) : recentRequests.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">🔧</div>
+              <h3>No maintenance requests yet</h3>
+              <p>Maintenance requests will appear here once submitted.</p>
+            </div>
+          ) : (
+            <div className="requests-list">
+              {recentRequests.map(ticket => (
+                <div key={ticket.id} className="request-item">
+                  <div className="request-header">
+                    <span className="request-category">{ticket.category}</span>
+                    <span className={`severity-badge ${ticket.severity}`}>
+                      {ticket.severity}
+                    </span>
+                  </div>
+                  <p className="request-description">{ticket.description}</p>
+                  <div className="request-footer">
+                    <span className="request-status">{ticket.status}</span>
+                    <span className="request-date">
+                      {formatDate(ticket.created_at)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="quick-actions">
+          <h3>⚡ Quick Actions</h3>
+          <div className="dashboard-grid">
+            <div className="dashboard-card">
+              <h3>📊 Overview</h3>
+              <p>Welcome to your property management dashboard. Here you can see all your key metrics and recent activity.</p>
+            </div>
+            <div className="dashboard-card">
+              <h3>🏠 Properties</h3>
+              <p>Manage your properties, view occupancy rates, and track maintenance schedules.</p>
+            </div>
+            <div className="dashboard-card">
+              <h3>💰 Financials</h3>
+              <p>Track rent collection, expenses, and financial performance across all properties.</p>
+            </div>
+            <div className="dashboard-card">
+              <h3>📈 Analytics</h3>
+              <p>View detailed reports and analytics to make informed decisions about your properties.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -437,7 +1028,7 @@ function Help() {
                 <li><a href="#">Payment processing errors</a></li>
                 <li><a href="#">Notification not working</a></li>
                 <li><a href="#">Mobile app issues</a></li>
-              </ul>
+          </ul>
             </div>
             <div className="help-section">
               <h3>📞 Contact Support</h3>
@@ -455,71 +1046,509 @@ function Help() {
   )
 }
 
+// Modern Landing Home Page
 function HomeScreen({ onNavigate }) {
-  const mainTabs = [
-    { 
-      id: 'requests', 
-      label: 'Requests', 
-      icon: '📋', 
-      description: 'Submit and track maintenance requests',
-      color: 'blue',
-      gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-    },
-    { 
-      id: 'maintenance', 
-      label: 'Maintenance Times', 
-      icon: '🕒', 
-      description: 'View maintenance schedules and hours',
-      color: 'purple',
-      gradient: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)'
-    },
-    { 
-      id: 'payments', 
-      label: 'Payments', 
-      icon: '💳', 
-      description: 'Manage payments and billing',
-      color: 'pink',
-      gradient: 'linear-gradient(135deg, #ec4899 0%, #f97316 100%)'
-    },
-    { 
-      id: 'chat', 
-      label: 'Chat Support', 
-      icon: '💬', 
-      description: 'Get help from our support team',
-      color: 'red',
-      gradient: 'linear-gradient(135deg, #ef4444 0%, #ec4899 100%)'
-    }
+  return (
+    <div className="landing-page">
+      {/* Hero Section */}
+      <section className="hero-section">
+        <div className="hero-background">
+          <div className="hero-overlay"></div>
+          <div className="hero-particles"></div>
+        </div>
+        <div className="hero-content">
+          <div className="hero-text">
+            <div className="hero-badge">
+              <span className="badge-icon">✨</span>
+              Trusted by 500+ Properties
+            </div>
+            <h1 className="hero-title">
+              <span className="title-highlight">Nebula</span> Property Management
+              <span className="title-sub">Platform</span>
+            </h1>
+            <p className="hero-description">
+              The all-in-one property management solution that transforms how you manage properties, 
+              communicate with tenants, and grow your real estate portfolio.
+            </p>
+            <div className="hero-stats">
+              <div className="stat-item">
+                <span className="stat-number">500+</span>
+                <span className="stat-label">Properties Managed</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-number">10K+</span>
+                <span className="stat-label">Happy Tenants</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-number">99.9%</span>
+                <span className="stat-label">Uptime</span>
+              </div>
+            </div>
+            <div className="hero-actions">
+              <button 
+                className="cta-primary"
+                onClick={() => onNavigate('dashboard')}
+              >
+                <span className="cta-icon">🚀</span>
+                Launch Dashboard
+                <span className="cta-arrow">→</span>
+              </button>
+              <button 
+                className="cta-secondary"
+                onClick={() => onNavigate('help')}
+              >
+                <span className="cta-icon">📖</span>
+                View Demo
+              </button>
+            </div>
+          </div>
+          <div className="hero-visual">
+            <div className="dashboard-preview">
+              <div className="preview-header">
+                <div className="preview-dots">
+                  <span className="dot red"></span>
+                  <span className="dot yellow"></span>
+                  <span className="dot green"></span>
+                </div>
+                <div className="preview-title">Nebula Dashboard</div>
+              </div>
+              <div className="preview-content">
+                <div className="preview-widgets">
+                  <div className="preview-widget small"></div>
+                  <div className="preview-widget large"></div>
+                  <div className="preview-widget medium"></div>
+                  <div className="preview-widget small"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="features-section">
+        <div className="container">
+          <div className="section-header">
+            <h2 className="section-title">Everything You Need to Manage Properties</h2>
+            <p className="section-subtitle">
+              Powerful tools designed for modern property managers
+            </p>
+          </div>
+          <div className="features-grid">
+            <div className="feature-card" onClick={() => onNavigate('requests')}>
+              <div className="feature-icon">📋</div>
+              <h3>Smart Requests</h3>
+              <p>AI-powered request categorization and priority management</p>
+              <div className="feature-badge">New</div>
+            </div>
+            <div className="feature-card" onClick={() => onNavigate('payments')}>
+              <div className="feature-icon">💳</div>
+              <h3>Financial Dashboard</h3>
+              <p>Real-time revenue tracking and automated payment processing</p>
+            </div>
+            <div className="feature-card" onClick={() => onNavigate('maintenance')}>
+              <div className="feature-icon">🔧</div>
+              <h3>Maintenance Hub</h3>
+              <p>Schedule, track, and manage all maintenance activities</p>
+            </div>
+            <div className="feature-card" onClick={() => onNavigate('notifications')}>
+              <div className="feature-icon">🔔</div>
+              <h3>Smart Notifications</h3>
+              <p>Intelligent alerts and communication management</p>
+            </div>
+            <div className="feature-card" onClick={() => onNavigate('chat')}>
+              <div className="feature-icon">💬</div>
+              <h3>Tenant Portal</h3>
+              <p>24/7 communication and self-service options</p>
+            </div>
+            <div className="feature-card" onClick={() => onNavigate('dashboard')}>
+              <div className="feature-icon">📊</div>
+              <h3>Analytics & Reports</h3>
+              <p>Comprehensive insights and performance metrics</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section className="about-section">
+        <div className="container">
+          <div className="about-content">
+            <h2 className="about-title">Why Choose Nebula?</h2>
+            <p className="about-description">
+              We've revolutionized property management by combining cutting-edge technology 
+              with human expertise to deliver exceptional results for property owners and tenants alike.
+            </p>
+            <div className="about-features">
+              <div className="about-feature">
+                <div className="feature-check">✓</div>
+                <span>15+ years of industry experience</span>
+              </div>
+              <div className="about-feature">
+                <div className="feature-check">✓</div>
+                <span>AI-powered automation</span>
+              </div>
+              <div className="about-feature">
+                <div className="feature-check">✓</div>
+                <span>24/7 tenant support</span>
+              </div>
+              <div className="about-feature">
+                <div className="feature-check">✓</div>
+                <span>Mobile-first design</span>
+              </div>
+            </div>
+            <button 
+              className="about-cta"
+              onClick={() => onNavigate('dashboard')}
+            >
+              Get Started Today
+              <span className="cta-arrow">→</span>
+            </button>
+            <div className="about-visual">
+              <div className="about-image">
+                <img 
+                  src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1973&q=80" 
+                  alt="Happy family in their home" 
+                />
+                <div className="image-overlay">
+                  <div className="overlay-stats">
+                    <div className="overlay-stat">
+                      <span className="stat-number">500+</span>
+                      <span className="stat-label">Properties</span>
+                    </div>
+                    <div className="overlay-stat">
+                      <span className="stat-number">10K+</span>
+                      <span className="stat-label">Tenants</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="cta-section">
+        <div className="container">
+          <div className="cta-content">
+            <h2 className="cta-title">Ready to Transform Your Property Management?</h2>
+            <p className="cta-description">
+              Join thousands of property managers who trust Nebula to streamline their operations
+            </p>
+            <div className="cta-actions">
+              <button 
+                className="cta-primary large"
+                onClick={() => onNavigate('dashboard')}
+              >
+                <span className="cta-icon">🚀</span>
+                Start Free Trial
+                <span className="cta-arrow">→</span>
+              </button>
+              <button 
+                className="cta-secondary large"
+                onClick={() => onNavigate('help')}
+              >
+                <span className="cta-icon">📞</span>
+                Contact Sales
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+// Enhanced Dashboard Page
+function DashboardPage({ onNavigate }) {
+  // Enhanced sample data
+  const dashboardStats = {
+    totalProperties: 24,
+    totalUnits: 156,
+    occupancyRate: 94.2,
+    totalRevenue: 125400,
+    monthlyRevenue: 15600,
+    pendingRequests: 8,
+    completedRequests: 142,
+    overduePayments: 3,
+    maintenanceScheduled: 12
+  }
+
+  const recentActivity = [
+    { id: 1, type: "request", message: "New maintenance request from Unit 3A - Leaky faucet", time: "2 hours ago", priority: "medium", unit: "3A" },
+    { id: 2, type: "payment", message: "Payment received from John Smith - $1,200", time: "4 hours ago", amount: 1200, unit: "2B" },
+    { id: 3, type: "maintenance", message: "HVAC maintenance completed in Unit 1C", time: "6 hours ago", status: "completed", unit: "1C" },
+    { id: 4, type: "tenant", message: "New tenant application for Unit 4B", time: "1 day ago", status: "pending", unit: "4B" },
+    { id: 5, type: "alert", message: "Overdue payment reminder sent to Unit 2A", time: "1 day ago", priority: "high", unit: "2A" }
+  ]
+
+  const financialData = {
+    monthlyRevenue: 15600,
+    totalRevenue: 125400,
+    expenses: 3200,
+    netIncome: 12400,
+    occupancyRate: 94.2,
+    averageRent: 1200,
+    collectionRate: 96.8
+  }
+
+  const maintenanceData = [
+    { id: 1, unit: "Unit 2B", issue: "Leaky faucet", priority: "Medium", daysLeft: 2, assignedTo: "Mike Johnson", status: "in_progress" },
+    { id: 2, unit: "Unit 4A", issue: "Broken AC", priority: "High", daysLeft: 1, assignedTo: "Sarah Wilson", status: "scheduled" },
+    { id: 3, unit: "Unit 1C", issue: "Door lock repair", priority: "Low", daysLeft: 5, assignedTo: "Tom Davis", status: "pending" },
+    { id: 4, unit: "Unit 3B", issue: "Electrical outlet", priority: "High", daysLeft: 0, assignedTo: "Mike Johnson", status: "urgent" }
+  ]
+
+  const upcomingEvents = [
+    { id: 1, title: "Building Inspection", date: "Tomorrow 10:00 AM", type: "inspection", location: "Main Building" },
+    { id: 2, title: "Fire Safety Drill", date: "Friday 2:00 PM", type: "safety", location: "All Buildings" },
+    { id: 3, title: "New Tenant Orientation", date: "Next Monday 9:00 AM", type: "tenant", location: "Office" },
+    { id: 4, title: "Maintenance Training", date: "Next Wednesday 1:00 PM", type: "training", location: "Conference Room" }
+  ]
+
+  const propertyPerformance = [
+    { name: "Sunset Apartments", occupancy: 95, revenue: 8500, maintenance: 1200, rating: 4.8 },
+    { name: "Garden View Complex", occupancy: 92, revenue: 7200, maintenance: 800, rating: 4.6 },
+    { name: "Downtown Plaza", occupancy: 98, revenue: 9200, maintenance: 1500, rating: 4.9 }
   ]
 
   return (
-    <div className="home-screen">
-      <div className="home-content">
-        <div className="welcome-section">
-          <h1 className="welcome-title">
-            <span className="welcome-icon">🏢</span>
-            Welcome to Nebula PM
-          </h1>
-          <p className="welcome-subtitle">
-            Your comprehensive property management solution
-          </p>
+    <div className="dashboard-page">
+      <div className="dashboard-content">
+        <div className="dashboard-header">
+          <div className="header-left">
+            <h1 className="dashboard-title">
+              <span className="dashboard-icon">📊</span>
+              Property Management Dashboard
+            </h1>
+            <p className="dashboard-subtitle">
+              Welcome back! Here's what's happening with your properties today.
+            </p>
+          </div>
+          <div className="header-right">
+            <div className="date-time">
+              <span className="date">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              <span className="time">{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          </div>
         </div>
         
-        <div className="tabs-grid">
-          {mainTabs.map(tab => (
-            <div
-              key={tab.id}
-              onClick={() => onNavigate(tab.id)}
-              className={`tab-card tab-card-${tab.color}`}
-              style={{ background: tab.gradient }}
-            >
-              <div className="tab-card-content">
-                <div className="tab-card-icon">{tab.icon}</div>
-                <h3 className="tab-card-title">{tab.label}</h3>
-                <p className="tab-card-description">{tab.description}</p>
-                <div className="tab-card-arrow">→</div>
+        {/* Key Metrics Row */}
+        <div className="metrics-row">
+          <div className="metric-card">
+            <div className="metric-icon">🏢</div>
+            <div className="metric-content">
+              <span className="metric-number">{dashboardStats.totalProperties}</span>
+              <span className="metric-label">Properties</span>
+            </div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-icon">🏠</div>
+            <div className="metric-content">
+              <span className="metric-number">{dashboardStats.totalUnits}</span>
+              <span className="metric-label">Total Units</span>
+            </div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-icon">📈</div>
+            <div className="metric-content">
+              <span className="metric-number">{dashboardStats.occupancyRate}%</span>
+              <span className="metric-label">Occupancy Rate</span>
+            </div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-icon">💰</div>
+            <div className="metric-content">
+              <span className="metric-number">${dashboardStats.monthlyRevenue.toLocaleString()}</span>
+              <span className="metric-label">Monthly Revenue</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Dashboard Grid */}
+        <div className="dashboard-grid">
+          {/* Recent Activity */}
+          <div className="widget widget-activity" onClick={() => onNavigate('notifications')}>
+            <div className="widget-header">
+              <div className="widget-icon">🔔</div>
+              <h3>Recent Activity</h3>
+              <div className="widget-badge">{recentActivity.length}</div>
+            </div>
+            <div className="widget-content">
+              <div className="activity-list">
+                {recentActivity.slice(0, 4).map(activity => (
+                  <div key={activity.id} className={`activity-item activity-${activity.type}`}>
+                    <div className="activity-icon">
+                      {activity.type === 'request' && '📋'}
+                      {activity.type === 'payment' && '💳'}
+                      {activity.type === 'maintenance' && '🔧'}
+                      {activity.type === 'tenant' && '👤'}
+                      {activity.type === 'alert' && '⚠️'}
+                    </div>
+                    <div className="activity-content">
+                      <p className="activity-message">{activity.message}</p>
+                      <div className="activity-meta">
+                        <span className="activity-time">{activity.time}</span>
+                        {activity.unit && <span className="activity-unit">{activity.unit}</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* Financial Overview */}
+          <div className="widget widget-financial" onClick={() => onNavigate('payments')}>
+            <div className="widget-header">
+              <div className="widget-icon">💳</div>
+              <h3>Financial Overview</h3>
+              <div className="widget-arrow">→</div>
+            </div>
+            <div className="widget-content">
+              <div className="financial-summary">
+                <div className="financial-item">
+                  <span className="financial-label">Monthly Revenue</span>
+                  <span className="financial-value positive">${financialData.monthlyRevenue.toLocaleString()}</span>
+                </div>
+                <div className="financial-item">
+                  <span className="financial-label">Net Income</span>
+                  <span className="financial-value positive">${financialData.netIncome.toLocaleString()}</span>
+                </div>
+                <div className="financial-item">
+                  <span className="financial-label">Collection Rate</span>
+                  <span className="financial-value positive">{financialData.collectionRate}%</span>
+                </div>
+                <div className="financial-item">
+                  <span className="financial-label">Overdue Payments</span>
+                  <span className="financial-value negative">{dashboardStats.overduePayments}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Maintenance Status */}
+          <div className="widget widget-maintenance" onClick={() => onNavigate('maintenance')}>
+            <div className="widget-header">
+              <div className="widget-icon">🔧</div>
+              <h3>Maintenance Status</h3>
+              <div className="widget-badge">{maintenanceData.length}</div>
+            </div>
+            <div className="widget-content">
+              <div className="maintenance-list">
+                {maintenanceData.slice(0, 3).map(maintenance => (
+                  <div key={maintenance.id} className={`maintenance-item priority-${maintenance.priority.toLowerCase()}`}>
+                    <div className="maintenance-info">
+                      <span className="maintenance-unit">{maintenance.unit}</span>
+                      <span className="maintenance-issue">{maintenance.issue}</span>
+                      <span className="maintenance-assigned">Assigned: {maintenance.assignedTo}</span>
+                    </div>
+                    <div className="maintenance-meta">
+                      <span className={`maintenance-priority priority-${maintenance.priority.toLowerCase()}`}>
+                        {maintenance.priority}
+                      </span>
+                      <span className="maintenance-days">{maintenance.daysLeft}d</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Upcoming Events */}
+          <div className="widget widget-events" onClick={() => onNavigate('notifications')}>
+            <div className="widget-header">
+              <div className="widget-icon">📅</div>
+              <h3>Upcoming Events</h3>
+              <div className="widget-badge">{upcomingEvents.length}</div>
+            </div>
+            <div className="widget-content">
+              <div className="events-list">
+                {upcomingEvents.slice(0, 3).map(event => (
+                  <div key={event.id} className={`event-item event-${event.type}`}>
+                    <div className="event-info">
+                      <span className="event-title">{event.title}</span>
+                      <span className="event-date">{event.date}</span>
+                      <span className="event-location">{event.location}</span>
+                    </div>
+                    <div className={`event-type event-${event.type}`}>{event.type}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Property Performance */}
+          <div className="widget widget-performance">
+            <div className="widget-header">
+              <div className="widget-icon">📊</div>
+              <h3>Property Performance</h3>
+            </div>
+            <div className="widget-content">
+              <div className="performance-list">
+                {propertyPerformance.map((property, index) => (
+                  <div key={index} className="performance-item">
+                    <div className="performance-name">{property.name}</div>
+                    <div className="performance-stats">
+                      <div className="performance-stat">
+                        <span className="stat-label">Occupancy</span>
+                        <span className="stat-value">{property.occupancy}%</span>
+                      </div>
+                      <div className="performance-stat">
+                        <span className="stat-label">Revenue</span>
+                        <span className="stat-value">${property.revenue.toLocaleString()}</span>
+                      </div>
+                      <div className="performance-stat">
+                        <span className="stat-label">Rating</span>
+                        <span className="stat-value">⭐ {property.rating}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="widget widget-actions">
+            <div className="widget-header">
+              <div className="widget-icon">⚡</div>
+              <h3>Quick Actions</h3>
+            </div>
+            <div className="widget-content">
+              <div className="action-grid">
+                <button 
+                  className="action-btn action-primary" 
+                  onClick={(e) => { e.stopPropagation(); onNavigate('requests'); }}
+                >
+                  <span className="action-icon">📋</span>
+                  New Request
+                </button>
+                <button 
+                  className="action-btn action-secondary" 
+                  onClick={(e) => { e.stopPropagation(); onNavigate('payments'); }}
+                >
+                  <span className="action-icon">💳</span>
+                  Process Payment
+                </button>
+                <button 
+                  className="action-btn action-secondary" 
+                  onClick={(e) => { e.stopPropagation(); onNavigate('maintenance'); }}
+                >
+                  <span className="action-icon">🔧</span>
+                  Schedule Maintenance
+                </button>
+                <button 
+                  className="action-btn action-secondary" 
+                  onClick={(e) => { e.stopPropagation(); onNavigate('chat'); }}
+                >
+                  <span className="action-icon">💬</span>
+                  Tenant Chat
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -527,8 +1556,9 @@ function HomeScreen({ onNavigate }) {
 }
 
 // Navigation Component
-function Navigation({ currentView, onNavigate, onBackToHome }) {
+function Navigation({ currentView, onNavigate }) {
   const topNavTabs = [
+    { id: 'home', label: 'Home', icon: '🏠' },
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'notifications', label: 'Notifications', icon: '🔔' },
     { id: 'profile', label: 'Profile', icon: '👤' },
@@ -539,7 +1569,7 @@ function Navigation({ currentView, onNavigate, onBackToHome }) {
   return (
     <div className="top-navigation">
       <div className="top-nav-content">
-        <div className="top-nav-brand">
+        <div className="top-nav-brand" onClick={() => onNavigate('home')}>
           <span className="brand-icon">🏢</span>
           <span className="brand-text">Nebula PM</span>
         </div>
@@ -555,12 +1585,6 @@ function Navigation({ currentView, onNavigate, onBackToHome }) {
             </button>
           ))}
         </nav>
-        {currentView !== 'home' && (
-          <button onClick={onBackToHome} className="back-button">
-            <span className="back-icon">←</span>
-            Home
-          </button>
-        )}
       </div>
     </div>
   )
@@ -577,14 +1601,12 @@ export default function App() {
     }
   }
 
-  const handleBackToHome = () => {
-    setCurrentView('home')
-  }
-
   const renderContent = () => {
     switch (currentView) {
       case 'home':
         return <HomeScreen onNavigate={handleNavigate} />
+      case 'dashboard':
+        return <Dashboard />
       case 'requests':
         return <Requests />
       case 'maintenance':
@@ -593,8 +1615,6 @@ export default function App() {
         return <Payments />
       case 'chat':
         return <Chat />
-      case 'dashboard':
-        return <Dashboard />
       case 'notifications':
         return <Notifications />
       case 'profile':
@@ -613,10 +1633,9 @@ export default function App() {
       <Navigation 
         currentView={currentView} 
         onNavigate={handleNavigate} 
-        onBackToHome={handleBackToHome} 
       />
 
-      <main className="app-main">
+      <main className="main-content">
         {renderContent()}
       </main>
     </div>
