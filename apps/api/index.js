@@ -30,10 +30,9 @@ app.post("/tickets/ingest", async (req, res) => {
       text: z.string().min(5),
       photoUrl: z.string().url().nullable().optional(),
       tenantId: z.string().uuid().nullable().optional(),
-      propertyId: z.string().uuid().nullable().optional(),
+      
     });
-    const { text, photoUrl = null, tenantId = null, propertyId = null } =
-      schema.parse(req.body);
+    const { text, photoUrl = null, tenantId = null } = schema.parse(req.body);
 
     let triage;
     try {
@@ -52,10 +51,10 @@ app.post("/tickets/ingest", async (req, res) => {
         description: text,
         status: "Triaged",
         category: triage.category,
+        severity: triage.severity,
         photo_url: photoUrl,
-        tenant_id: tenantId,
-        property_id: propertyId,
-      })
+        tenant_id: tenantId
+        })
       .select()
       .single();
     if (error) throw error;
