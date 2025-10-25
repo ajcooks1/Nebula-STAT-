@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/$/, '')
 
-function Tickets() {
+function App() {
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -51,6 +51,7 @@ function Tickets() {
         throw new Error(body.error || `Request failed: ${res.status}`)
       }
       const body = await res.json()
+      // prepend new ticket
       if (body.request) setTickets(prev => [body.request, ...prev])
       setText('')
       setPhotoUrl('')
@@ -63,7 +64,9 @@ function Tickets() {
   }
 
   return (
-    <div>
+    <div style={{ maxWidth: 900, margin: '32px auto', padding: '0 16px', fontFamily: 'system-ui, sans-serif' }}>
+      <h1>Nebula PM — Tickets</h1>
+
       <section style={{ marginBottom: 24 }}>
         <h2>Submit a new ticket</h2>
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 8 }}>
@@ -99,7 +102,7 @@ function Tickets() {
               <li key={t.id} style={{ border: '1px solid #ddd', padding: 12, marginBottom: 8, borderRadius: 6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                   <strong>{t.category ?? 'Uncategorized'}</strong>
-                  <small>{t.created_at ? new Date(t.created_at).toLocaleString() : ''}</small>
+                  <small>{new Date(t.created_at).toLocaleString()}</small>
                 </div>
                 <p style={{ margin: '8px 0' }}>{t.description}</p>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -120,51 +123,4 @@ function Tickets() {
   )
 }
 
-function MaintenancePlaceholder({ title }) {
-  return (
-    <div style={{ padding: 24 }}>
-      <h2>{title}</h2>
-      <p>This page is under maintenance. We'll have this feature available soon.</p>
-    </div>
-  )
-}
-
-export default function App() {
-  const tabs = ['Requests', 'Maintenance Times', 'Payments', 'Chat']
-  const [active, setActive] = useState('Requests')
-
-  return (
-    <div style={{ maxWidth: 1000, margin: '24px auto', padding: '0 16px', fontFamily: 'system-ui, sans-serif' }}>
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h1 style={{ margin: 0 }}>Nebula PM</h1>
-        <nav>
-          {tabs.map(t => (
-            <button
-              key={t}
-              onClick={() => setActive(t)}
-              style={{
-                marginLeft: 8,
-                padding: '8px 12px',
-                background: active === t ? '#0b6efd' : 'transparent',
-                color: active === t ? 'white' : '#0b6efd',
-                border: '1px solid #0b6efd',
-                borderRadius: 6,
-                cursor: 'pointer',
-              }}
-            >
-              {t}
-            </button>
-          ))}
-        </nav>
-      </header>
-
-      <main style={{ marginTop: 18 }}>
-        {active === 'Requests' ? (
-          <Tickets />
-        ) : (
-          <MaintenancePlaceholder title={active} />
-        )}
-      </main>
-    </div>
-  )
-}
+export default App
