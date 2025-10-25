@@ -272,17 +272,319 @@ function Chat() {
   )
 }
 
-export default function App() {
-  const tabs = [
-    { id: 'requests', label: 'Requests', icon: '📋' },
-    { id: 'maintenance', label: 'Maintenance Times', icon: '🕒' },
-    { id: 'payments', label: 'Payments', icon: '💳' },
-    { id: 'chat', label: 'Chat', icon: '💬' }
+// New Page Components
+function Dashboard() {
+  return (
+    <div className="tab-content">
+      <div className="section">
+        <h2>Dashboard</h2>
+        <div className="dashboard-grid">
+          <div className="dashboard-card">
+            <h3>📊 Overview</h3>
+            <p>Welcome to your property management dashboard. Here you can see all your key metrics and recent activity.</p>
+          </div>
+          <div className="dashboard-card">
+            <h3>🏠 Properties</h3>
+            <p>Manage your properties, view occupancy rates, and track maintenance schedules.</p>
+          </div>
+          <div className="dashboard-card">
+            <h3>💰 Financials</h3>
+            <p>Track rent collection, expenses, and financial performance across all properties.</p>
+          </div>
+          <div className="dashboard-card">
+            <h3>📈 Analytics</h3>
+            <p>View detailed reports and analytics to make informed decisions about your properties.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Notifications() {
+  const notifications = [
+    { id: 1, title: "New Maintenance Request", message: "A new maintenance request has been submitted for Unit 3A", time: "2 hours ago", type: "maintenance" },
+    { id: 2, title: "Payment Received", message: "Rent payment received from John Smith for Unit 2B", time: "4 hours ago", type: "payment" },
+    { id: 3, title: "Scheduled Maintenance", message: "HVAC maintenance scheduled for tomorrow at 10 AM", time: "1 day ago", type: "schedule" },
+    { id: 4, title: "System Update", message: "Nebula PM has been updated with new features", time: "2 days ago", type: "system" }
   ]
+
+  return (
+    <div className="tab-content">
+      <div className="section">
+        <h2>Notifications</h2>
+        <div className="notifications-list">
+          {notifications.map(notification => (
+            <div key={notification.id} className={`notification-card notification-${notification.type}`}>
+              <div className="notification-content">
+                <h3>{notification.title}</h3>
+                <p>{notification.message}</p>
+                <span className="notification-time">{notification.time}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Profile() {
+  return (
+    <div className="tab-content">
+      <div className="section">
+        <h2>Profile Settings</h2>
+        <div className="profile-content">
+          <div className="profile-info">
+            <div className="profile-avatar">
+              <span className="avatar-icon">👤</span>
+            </div>
+            <div className="profile-details">
+              <h3>John Doe</h3>
+              <p>Property Manager</p>
+              <p>john.doe@nebula-pm.com</p>
+            </div>
+          </div>
+          <div className="profile-sections">
+            <div className="profile-section">
+              <h4>Personal Information</h4>
+              <p>Update your personal details and contact information.</p>
+              <button className="btn btn-secondary">Edit Profile</button>
+            </div>
+            <div className="profile-section">
+              <h4>Account Settings</h4>
+              <p>Manage your account preferences and security settings.</p>
+              <button className="btn btn-secondary">Account Settings</button>
+            </div>
+            <div className="profile-section">
+              <h4>Notifications</h4>
+              <p>Configure how you receive notifications and updates.</p>
+              <button className="btn btn-secondary">Notification Settings</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Settings() {
+  return (
+    <div className="tab-content">
+      <div className="section">
+        <h2>Settings</h2>
+        <div className="settings-grid">
+          <div className="settings-card">
+            <h3>🔧 General Settings</h3>
+            <p>Configure general application preferences and display options.</p>
+            <button className="btn btn-primary">Configure</button>
+          </div>
+          <div className="settings-card">
+            <h3>🔔 Notification Preferences</h3>
+            <p>Set up how and when you want to receive notifications.</p>
+            <button className="btn btn-primary">Configure</button>
+          </div>
+          <div className="settings-card">
+            <h3>🔒 Security Settings</h3>
+            <p>Manage your password, two-factor authentication, and security options.</p>
+            <button className="btn btn-primary">Configure</button>
+          </div>
+          <div className="settings-card">
+            <h3>🎨 Appearance</h3>
+            <p>Customize the look and feel of your dashboard and interface.</p>
+            <button className="btn btn-primary">Configure</button>
+          </div>
+          <div className="settings-card">
+            <h3>📊 Data & Privacy</h3>
+            <p>Control your data sharing preferences and privacy settings.</p>
+            <button className="btn btn-primary">Configure</button>
+          </div>
+          <div className="settings-card">
+            <h3>🔄 Integrations</h3>
+            <p>Connect with third-party services and manage API integrations.</p>
+            <button className="btn btn-primary">Configure</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Help() {
+  return (
+    <div className="tab-content">
+      <div className="section">
+        <h2>Help & Support</h2>
+        <div className="help-content">
+          <div className="help-search">
+            <input type="text" placeholder="Search help articles..." className="help-search-input" />
+            <button className="btn btn-primary">Search</button>
+          </div>
+          <div className="help-sections">
+            <div className="help-section">
+              <h3>📚 Getting Started</h3>
+              <ul>
+                <li><a href="#">How to submit a maintenance request</a></li>
+                <li><a href="#">Setting up your profile</a></li>
+                <li><a href="#">Understanding the dashboard</a></li>
+                <li><a href="#">Payment processing guide</a></li>
+              </ul>
+            </div>
+            <div className="help-section">
+              <h3>🔧 Common Issues</h3>
+              <ul>
+                <li><a href="#">Troubleshooting login problems</a></li>
+                <li><a href="#">Payment processing errors</a></li>
+                <li><a href="#">Notification not working</a></li>
+                <li><a href="#">Mobile app issues</a></li>
+              </ul>
+            </div>
+            <div className="help-section">
+              <h3>📞 Contact Support</h3>
+              <p>Need more help? Our support team is here for you.</p>
+              <div className="contact-options">
+                <button className="btn btn-primary">Live Chat</button>
+                <button className="btn btn-secondary">Email Support</button>
+                <button className="btn btn-secondary">Phone: (555) 123-HELP</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function HomeScreen({ onNavigate }) {
+  const mainTabs = [
+    { 
+      id: 'requests', 
+      label: 'Requests', 
+      icon: '📋', 
+      description: 'Submit and track maintenance requests',
+      color: 'blue',
+      gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+    },
+    { 
+      id: 'maintenance', 
+      label: 'Maintenance Times', 
+      icon: '🕒', 
+      description: 'View maintenance schedules and hours',
+      color: 'purple',
+      gradient: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)'
+    },
+    { 
+      id: 'payments', 
+      label: 'Payments', 
+      icon: '💳', 
+      description: 'Manage payments and billing',
+      color: 'pink',
+      gradient: 'linear-gradient(135deg, #ec4899 0%, #f97316 100%)'
+    },
+    { 
+      id: 'chat', 
+      label: 'Chat Support', 
+      icon: '💬', 
+      description: 'Get help from our support team',
+      color: 'red',
+      gradient: 'linear-gradient(135deg, #ef4444 0%, #ec4899 100%)'
+    }
+  ]
+
+  return (
+    <div className="home-screen">
+      <div className="home-content">
+        <div className="welcome-section">
+          <h1 className="welcome-title">
+            <span className="welcome-icon">🏢</span>
+            Welcome to Nebula PM
+          </h1>
+          <p className="welcome-subtitle">
+            Your comprehensive property management solution
+          </p>
+        </div>
+        
+        <div className="tabs-grid">
+          {mainTabs.map(tab => (
+            <div
+              key={tab.id}
+              onClick={() => onNavigate(tab.id)}
+              className={`tab-card tab-card-${tab.color}`}
+              style={{ background: tab.gradient }}
+            >
+              <div className="tab-card-content">
+                <div className="tab-card-icon">{tab.icon}</div>
+                <h3 className="tab-card-title">{tab.label}</h3>
+                <p className="tab-card-description">{tab.description}</p>
+                <div className="tab-card-arrow">→</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Navigation Component
+function Navigation({ currentView, onNavigate, onBackToHome }) {
+  const topNavTabs = [
+    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'notifications', label: 'Notifications', icon: '🔔' },
+    { id: 'profile', label: 'Profile', icon: '👤' },
+    { id: 'settings', label: 'Settings', icon: '⚙️' },
+    { id: 'help', label: 'Help', icon: '❓' }
+  ]
+
+  return (
+    <div className="top-navigation">
+      <div className="top-nav-content">
+        <div className="top-nav-brand">
+          <span className="brand-icon">🏢</span>
+          <span className="brand-text">Nebula PM</span>
+        </div>
+        <nav className="top-nav-tabs">
+          {topNavTabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => onNavigate(tab.id)}
+              className={`top-nav-tab ${currentView === tab.id ? 'active' : ''}`}
+            >
+              <span className="top-nav-icon">{tab.icon}</span>
+              <span className="top-nav-label">{tab.label}</span>
+            </button>
+          ))}
+        </nav>
+        {currentView !== 'home' && (
+          <button onClick={onBackToHome} className="back-button">
+            <span className="back-icon">←</span>
+            Home
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default function App() {
+  const [currentView, setCurrentView] = useState('home')
   const [activeTab, setActiveTab] = useState('requests')
 
-  const renderTabContent = () => {
-    switch (activeTab) {
+  const handleNavigate = (tabId) => {
+    setCurrentView(tabId)
+    if (['requests', 'maintenance', 'payments', 'chat'].includes(tabId)) {
+      setActiveTab(tabId)
+    }
+  }
+
+  const handleBackToHome = () => {
+    setCurrentView('home')
+  }
+
+  const renderContent = () => {
+    switch (currentView) {
+      case 'home':
+        return <HomeScreen onNavigate={handleNavigate} />
       case 'requests':
         return <Requests />
       case 'maintenance':
@@ -291,36 +593,31 @@ export default function App() {
         return <Payments />
       case 'chat':
         return <Chat />
+      case 'dashboard':
+        return <Dashboard />
+      case 'notifications':
+        return <Notifications />
+      case 'profile':
+        return <Profile />
+      case 'settings':
+        return <Settings />
+      case 'help':
+        return <Help />
       default:
-        return <Requests />
+        return <HomeScreen onNavigate={handleNavigate} />
     }
   }
 
   return (
     <div className="app">
-      <header className="app-header">
-        <div className="header-content">
-          <h1 className="app-title">
-            <span className="logo">🏢</span>
-            Nebula Property Management
-          </h1>
-          <nav className="tab-navigation">
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
-              >
-                <span className="tab-icon">{tab.icon}</span>
-                <span className="tab-label">{tab.label}</span>
-              </button>
-            ))}
-          </nav>
-        </div>
-      </header>
+      <Navigation 
+        currentView={currentView} 
+        onNavigate={handleNavigate} 
+        onBackToHome={handleBackToHome} 
+      />
 
       <main className="app-main">
-        {renderTabContent()}
+        {renderContent()}
       </main>
     </div>
   )
