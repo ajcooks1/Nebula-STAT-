@@ -3,3 +3,4 @@ node_modules/
 .env
 .env.local
 apps/n8n/
+node_modules/
