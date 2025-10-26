@@ -3933,3 +3933,237 @@ input:checked + .toggle-slider:before {
     padding: 1rem;
   }
 }
+/* ==================================================== */
+/* NEW FANCY & PROFESSIONAL Smart Thermostat Widget Styles */
+/* ==================================================== */
+
+.widget-thermostat {
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08); /* More pronounced, soft shadow */
+  overflow: hidden; /* Ensures rounded corners clip content */
+}
+
+.widget-thermostat .widget-header {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #eef2f6; /* Lighter, subtle border */
+  padding: 0.9rem 1.2rem; /* Adjusted padding */
+  gap: 0.7rem;
+  background-color: #f7f9fc; /* Light background for header */
+}
+
+.widget-thermostat .widget-icon {
+  font-size: 1.6rem;
+  color: #f59e0b; /* Warm orange */
+  line-height: 1;
+}
+
+.widget-thermostat h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #2d3748; /* Darker text for professionalism */
+  font-weight: 600;
+  flex-grow: 1;
+}
+
+.widget-thermostat .widget-unit {
+  font-size: 0.85rem;
+  color: #718096;
+  background-color: #e2e8f0; /* Slightly darker unit background */
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px; /* Pill shape */
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Main Content Area */
+.thermostat-professional-content {
+  padding: 1.2rem; /* Overall padding for the content area */
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem; /* Spacing between main sections */
+  flex-grow: 1;
+}
+
+/* Individual Sections within content */
+.thermostat-section {
+  background-color: #fcfdfe; /* Very light background for sections */
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #eef2f6; /* Subtle section border */
+}
+
+/* SECTION 1: Current Temperature & Controls/Status */
+/* SECTION 1: Current Temperature & Controls/Status */
+.thermostat-temp-status {
+  display: flex; /* Use flexbox */
+  justify-content: space-between; /* Space items out */
+  align-items: center; /* Vertically align centers */
+  gap: 1rem; /* Adjust gap if needed */
+  padding-bottom: 1rem; /* Add some space below */
+  border-bottom: 1px solid #eef2f6; /* Separator line */
+  margin-bottom: 1rem; /* Space before next section */
+}
+
+.current-temp-display-pro {
+  /* Styles remain the same */
+  text-align: left;
+  flex-shrink: 0;
+}
+.current-temp-pro {
+  /* Styles remain the same */
+  font-size: 2.8rem; font-weight: 700; color: #2c5282; display: block; line-height: 1;
+}
+.target-temp-pro {
+  /* Styles remain the same */
+  font-size: 0.9rem; color: #718096; margin-top: 0.3rem; display: block; font-weight: 500;
+}
+
+.mode-status-pro {
+  display: flex;
+  flex-direction: column; /* Stack Mode and Status vertically */
+  align-items: flex-end; /* Align text to the right */
+  gap: 0; /* Space between Mode and Status lines */
+  font-size: 0.72rem;
+}
+.status-item-pro {
+  display: flex; /* Align label and value horizontally */
+  justify-content: flex-end; /* Keep alignment to the right */
+  align-items: baseline; /* Align text baselines */
+  gap: 0.5rem;
+}
+.status-label-pro {
+  /* Styles remain the same */
+  color: #718096; font-weight: 500;
+}
+.status-value-pro {
+  /* Styles remain the same */
+  font-weight: 600; color: #2d3748; white-space: nowrap;
+}
+/* Status colors remain the same */
+.status-running { color: #38a169; }
+.status-idle { color: #718096; }
+.status-error { color: #e53e3e; }
+
+
+/* SECTION 2: Environmental Details Grid */
+.thermostat-details-pro {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* Four equal columns */
+  gap: 0.8rem; /* Spacing between detail items */
+  font-size: 0.85rem;
+  color: #4a5568;
+  text-align: center;
+  background-color: #f8faff; /* Slightly different background for visual break */
+  padding: 0.8rem; /* Inner padding for this section */
+  border: 1px solid #eef2f6;
+  border-radius: 8px;
+}
+.detail-item-pro {
+  display: flex;
+  flex-direction: column; /* Stack icon, value, label */
+  align-items: center;
+  gap: 0.2rem;
+}
+.detail-icon-pro {
+  font-size: 1.2rem;
+  color: #607b96; /* Muted blue-grey for detail icons */
+  margin-bottom: 0.1rem;
+}
+.detail-value-pro {
+  font-weight: 600;
+  color: #2d3748;
+}
+.detail-label-pro {
+  font-size: 0.75rem; /* Smaller label for context */
+  color: #a0aec0; /* Lighter grey */
+  font-weight: 500;
+}
+
+
+/* SECTION 3: Alert Summary */
+/* SECTION 3: Alert Summary */
+.thermostat-alert-summary {
+  display: flex;
+  align-items: center; /* Vertically center all items */
+  justify-content: space-between; /* Space items evenly */
+  padding: 0.8rem 1rem;
+  border-left: 4px solid;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  margin-top: auto;
+  gap: 0.8rem; /* Consistent gap */
+  border-radius: 8px; /* Add rounding consistent with section */
+}
+.thermostat-alert-summary:hover {
+  background-color: #eef2f6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Alert Severity Colors remain the same */
+.thermostat-alert-summary.alert-low { border-color: #f6e05e; background-color: #fffde7; }
+.thermostat-alert-summary.alert-medium { border-color: #f6ad55; background-color: #fff8e1; }
+.thermostat-alert-summary.alert-high { border-color: #fc8181; background-color: #fff5f5; }
+
+.alert-icon-pro {
+  /* Styles remain the same */
+  font-size: 1.4rem; flex-shrink: 0;
+}
+.alert-content-pro {
+  flex-grow: 1; /* Allow content to take space */
+  display: flex;
+  flex-direction: column; /* Stack message and severity */
+  justify-content: center; /* Center vertically */
+  align-items: flex-start; /* Align text to the left */
+}
+.alert-message-pro {
+   /* Styles remain the same */
+   font-weight: 600; color: #2d3748; font-size: 0.9rem; line-height: 1.3;
+}
+.alert-severity-pro {
+  /* Styles remain the same */
+  font-size: 0.75rem; padding: 0.15rem 0.4rem; border-radius: 4px; color: white; margin-top: 0.3rem; display: inline-block; font-weight: 500; white-space: nowrap;
+}
+/* Severity colors remain the same */
+.severity-low { background-color: #d69e2e; }
+.severity-medium { background-color: #dd6b20; }
+.severity-high { background-color: #c53030; }
+
+.alert-action-pro {
+  /* Styles remain the same */
+  font-size: 0.70rem; color: #4299e1; font-weight: 600; white-space: nowrap; flex-shrink: 0; display: flex; align-items: center; gap: 0.2rem;
+}
+
+/* No Alerts Section */
+.thermostat-no-alerts {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem;
+  text-align: center;
+  color: #718096;
+  font-size: 0.9rem;
+  background-color: #f8faff; /* Light blueish background */
+  border: 1px solid #eef2f6;
+  border-radius: 8px;
+  margin-top: auto; /* Push to bottom */
+}
+.no-alert-icon-pro {
+  font-size: 1.1rem;
+  margin-right: 0.5rem;
+  color: #48bb78; /* Green check */
+}
+.no-alert-message-pro {
+  font-weight: 500;
+  color: #5a6b7f; /* Slightly darker grey */
+}
+
+
+/* --- Keep existing modal styles below this line --- */
+/* ==================================== */
+/* Styles for the Alert Modal         */
+/* ==================================== */
+/* ... (modal styles remain the same) ... */

@@ -1148,6 +1148,13 @@ function HomeScreen({ onNavigate }) {
 
 // Enhanced Dashboard Page
 function DashboardPage({ onNavigate }) {
+  const [thermostat, setThermostat] = useState({ unitId: 'Unit 12B', currentTemp: 72, targetTemp: 70, mode: 'Cooling', status: 'Running', humidity: 45, fan: 'Auto', filterLife: 80, battery: 90, alerts: [ { id: 1, code: 'PM-HVAC-001', message: 'Compressor running longer than usual.', severity: 'Medium', timestamp: new Date(Date.now() - 3600000) }, { id: 2, code: 'PM-TEMP-002', message: 'Temperature sensor anomaly detected.', severity: 'High', timestamp: new Date(Date.now() - 86400000) }, { id: 3, code: 'PM-FILT-003', message: 'Air filter needs replacement soon.', severity: 'Low', timestamp: new Date(Date.now() - 172800000) }, ], });
+  const [showAlertDetails, setShowAlertDetails] = useState(false);
+  const [scheduledAlertId, setScheduledAlertId] = useState(null);
+
+  const handleScheduleAlert = (alertId) => { console.log(`Scheduling tech for alert ${alertId}...`); setScheduledAlertId(alertId); };
+  const handleDismissAlert = (alertId) => { console.log(`Dismissing alert ${alertId}...`); setThermostat(prev => ({ ...prev, alerts: (prev.alerts || []).filter(alert => alert.id !== alertId) })); setScheduledAlertId(null); };
+  const formatAlertTime = (date) => { const now = new Date(); const alertDate = new Date(date); if (isNaN(alertDate)) return 'Invalid date'; const diffMs = now - alertDate; const diffHours = Math.round(diffMs / (1000 * 60 * 60)); const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24)); if (diffMs < 0) return 'Future date'; if (diffHours < 1) return 'Just now'; if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`; else return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`; };
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -1331,6 +1338,86 @@ function DashboardPage({ onNavigate }) {
 
         {/* Main Dashboard Grid */}
         <div className="dashboard-grid">
+        {/* --- FANCY & PROFESSIONAL SMART THERMOSTAT WIDGET --- */}
+        <div className="widget widget-thermostat">
+            {/* Header (retains previous good structure) */}
+            <div className="widget-header">
+              <div className="widget-icon">🔥</div>
+              <h3>Smart Thermostat</h3>
+              <div className="widget-unit">{thermostat?.unitId || 'N/A'}</div>
+            </div>
+
+            <div className="widget-content thermostat-professional-content">
+
+              {/* SECTION 1: Current Temperature & Controls/Status */}
+              <div className="thermostat-section thermostat-temp-status">
+                <div className="current-temp-display-pro">
+                  <span className="current-temp-pro">{thermostat?.currentTemp || '--'}°F</span>
+                  <span className="target-temp-pro">Target: {thermostat?.targetTemp || '--'}°F</span>
+                </div>
+                <div className="mode-status-pro">
+                  <div className="status-item-pro">
+                    <span className="status-label-pro">Mode</span>
+                    <span className="status-value-pro">{thermostat?.mode || 'N/A'}</span>
+                  </div>
+                  <div className="status-item-pro">
+                    <span className="status-label-pro">Status</span>
+                    <span className={`status-value-pro status-${thermostat?.status?.toLowerCase()}`}>{thermostat?.status || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 2: Environmental Details (Humidity, Fan, Filter, Battery) */}
+              <div className="thermostat-section thermostat-details-pro">
+                <div className="detail-item-pro">
+                  <span className="detail-icon-pro">💧</span>
+                  <span className="detail-value-pro">{thermostat?.humidity || '--'}%</span>
+                  <span className="detail-label-pro">Humidity</span>
+                </div>
+                 <div className="detail-item-pro">
+                  <span className="detail-icon-pro">🌬️</span>
+                  <span className="detail-value-pro">{thermostat?.fan || 'N/A'}</span>
+                   <span className="detail-label-pro">Fan</span>
+                </div>
+                 <div className="detail-item-pro">
+                  <span className="detail-icon-pro">🍃</span>
+                   <span className="detail-value-pro">{thermostat?.filterLife || '--'}%</span>
+                   <span className="detail-label-pro">Filter</span>
+                </div>
+                 <div className="detail-item-pro">
+                  <span className="detail-icon-pro">🔋</span>
+                  <span className="detail-value-pro">{thermostat?.battery || '--'}%</span>
+                   <span className="detail-label-pro">Battery</span>
+                </div>
+              </div>
+
+              {/* SECTION 3: Alert Summary (or No Alerts) */}
+              {thermostat?.alerts && Array.isArray(thermostat.alerts) && thermostat.alerts.length > 0 ? (
+                <div
+                  className={`thermostat-section thermostat-alert-summary alert-${thermostat.alerts[0].severity?.toLowerCase()}`}
+                  onClick={() => setShowAlertDetails(true)} /* Opens modal */
+                >
+                  <span className="alert-icon-pro">⚠️</span>
+                  <div className="alert-content-pro">
+                    <span className="alert-message-pro">
+                      {thermostat.alerts.length} Active Alert{thermostat.alerts.length > 1 ? 's' : ''}!
+                    </span>
+                    <span className={`alert-severity-pro severity-${thermostat.alerts[0].severity?.toLowerCase()}`}>
+                       Highest: {thermostat.alerts[0].severity}
+                    </span>
+                  </div>
+                  <span className="alert-action-pro">View  →</span>
+                </div>
+              ) : (
+                <div className="thermostat-section thermostat-no-alerts">
+                  <span className="no-alert-icon-pro">✅</span>
+                  <span className="no-alert-message-pro">No active alerts.</span>
+                </div>
+              )}
+
+            </div> {/* End thermostat-professional-content */}
+          </div>
+          {/* --- END FANCY & PROFESSIONAL THERMOSTAT WIDGET --- */}
           {/* Recent Activity */}
           <div className="widget widget-activity" onClick={() => onNavigate('notifications')}>
             <div className="widget-header">
@@ -1532,6 +1619,18 @@ function DashboardPage({ onNavigate }) {
           </div>
         </div>
       </div>
+      {/* --- RENDER THE ALERT MODAL CONDITIONALLY --- */}
+      {showAlertDetails && (
+        <AlertsModal
+          alerts={thermostat.alerts}
+          onClose={() => setShowAlertDetails(false)}
+          onSchedule={handleScheduleAlert}
+          onDismiss={handleDismissAlert}
+          scheduledAlertId={scheduledAlertId}
+          formatAlertTime={formatAlertTime}
+        />
+      )}
+      {/* ------------------------------------------- */}
     </div>
   )
 }
