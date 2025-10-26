@@ -1013,28 +1013,29 @@ function HomeScreen({ onNavigate }) { /* ... keep existing HomeScreen code ... *
                     <div className="hero-text">
                         <div className="hero-badge">
                             <span className="badge-icon">✨</span>
-                            Trusted by 500+ Properties
+                            Trusted by 100+ Properties
                         </div>
                         <h1 className="hero-title">
-                            <span className="title-highlight">Nebula</span> Property Management
-                            <span className="title-sub">Platform</span>
+                            <span className="title-highlight">Nebula</span> STAT
+                            <span className="title-sub">Smart Home Technology & Property Management</span>
                         </h1>
                         <p className="hero-description">
-                            The all-in-one property management solution that transforms how you manage properties,
-                            communicate with tenants, and grow your real estate portfolio.
+                            Your all-in-one smart home technology and property management platform. We combine smart 
+                            thermostats, climate control, tech integration, and comprehensive home care—from plumbing 
+                            to HVAC to emergency services.
                         </p>
                         <div className="hero-stats">
                             <div className="stat-item">
-                                <span className="stat-number">500+</span>
+                                <span className="stat-number">100+</span>
                                 <span className="stat-label">Properties Managed</span>
                             </div>
                             <div className="stat-item">
-                                <span className="stat-number">10K+</span>
+                                <span className="stat-number">200+</span>
                                 <span className="stat-label">Happy Tenants</span>
                             </div>
                             <div className="stat-item">
-                                <span className="stat-number">99.9%</span>
-                                <span className="stat-label">Uptime</span>
+                                <span className="stat-number">92%</span>
+                                <span className="stat-label">Occupancy Rate</span>
                             </div>
                         </div>
                         <div className="hero-actions">
@@ -1082,42 +1083,42 @@ function HomeScreen({ onNavigate }) { /* ... keep existing HomeScreen code ... *
             <section className="features-section">
                 <div className="container">
                     <div className="section-header">
-                        <h2 className="section-title">Everything You Need to Manage Properties</h2>
+                        <h2 className="section-title">Complete Smart Home & Property Solutions</h2>
                         <p className="section-subtitle">
-                            Powerful tools designed for modern property managers
+                            Comprehensive services for homeowners and property investors
                         </p>
                     </div>
                     <div className="features-grid">
                         <div className="feature-card" onClick={() => onNavigate('requests')}>
-                            <div className="feature-icon">📋</div>
-                            <h3>Smart Requests</h3>
-                            <p>AI-powered request categorization and priority management</p>
+                            <div className="feature-icon">🌡️</div>
+                            <h3>Smart Thermostats</h3>
+                            <p>Climate control and tech integration with intelligent monitoring</p>
                             <div className="feature-badge">New</div>
-                        </div>
-                        <div className="feature-card" onClick={() => onNavigate('payments')}>
-                            <div className="feature-icon">💳</div>
-                            <h3>Financial Dashboard</h3>
-                            <p>Real-time revenue tracking and automated payment processing</p>
                         </div>
                         <div className="feature-card" onClick={() => onNavigate('maintenance')}>
                             <div className="feature-icon">🔧</div>
-                            <h3>Maintenance Hub</h3>
-                            <p>Schedule, track, and manage all maintenance activities</p>
+                            <h3>HVAC & Electrical</h3>
+                            <p>Complete heating, cooling, and electrical maintenance services</p>
                         </div>
-                        <div className="feature-card" onClick={() => onNavigate('notifications')}>
-                            <div className="feature-icon">🔔</div>
-                            <h3>Smart Notifications</h3>
-                            <p>Intelligent alerts and communication management</p>
+                        <div className="feature-card" onClick={() => onNavigate('maintenance')}>
+                            <div className="feature-icon">💧</div>
+                            <h3>Plumbing & Repairs</h3>
+                            <p>Expert plumbing services and emergency repairs available 24/7</p>
                         </div>
-                        <div className="feature-card" onClick={() => onNavigate('chat')}>
-                            <div className="feature-icon">💬</div>
-                            <h3>Tenant Portal</h3>
-                            <p>24/7 communication and self-service options</p>
+                        <div className="feature-card" onClick={() => onNavigate('payments')}>
+                            <div className="feature-icon">💳</div>
+                            <h3>Service Plans</h3>
+                            <p>Flexible tiers from Starter ($299) to Elite ($59.99/month)</p>
+                        </div>
+                        <div className="feature-card" onClick={() => onNavigate('dashboard')}>
+                            <div className="feature-icon">🏠</div>
+                            <h3>Property Marketplace</h3>
+                            <p>Hand-picked rental properties with real-time performance metrics</p>
                         </div>
                         <div className="feature-card" onClick={() => onNavigate('dashboard')}>
                             <div className="feature-icon">📊</div>
-                            <h3>Analytics & Reports</h3>
-                            <p>Comprehensive insights and performance metrics</p>
+                            <h3>Investor Dashboard</h3>
+                            <p>Track yield (5-12%), IRR (10-15%), and rental income in real-time</p>
                         </div>
                     </div>
                 </div>
@@ -1127,27 +1128,28 @@ function HomeScreen({ onNavigate }) { /* ... keep existing HomeScreen code ... *
             <section className="about-section">
                 <div className="container">
                     <div className="about-content">
-                        <h2 className="about-title">Why Choose Nebula?</h2>
+                        <h2 className="about-title">Why Choose Nebula STAT?</h2>
                         <p className="about-description">
-                            We've revolutionized property management by combining cutting-edge technology
-                            with human expertise to deliver exceptional results for property owners and tenants alike.
+                            Nebula STAT combines smart home technology with comprehensive property management. 
+                            From smart thermostats and climate control to plumbing, HVAC, electrical, and emergency 
+                            services—we offer convenient, all-in-one home maintenance with tiered service plans.
                         </p>
                         <div className="about-features">
                             <div className="about-feature">
                                 <div className="feature-check">✓</div>
-                                <span>15+ years of industry experience</span>
+                                <span>Smart home technology & climate control</span>
                             </div>
                             <div className="about-feature">
                                 <div className="feature-check">✓</div>
-                                <span>AI-powered automation</span>
+                                <span>24/7 emergency repair services</span>
                             </div>
                             <div className="about-feature">
                                 <div className="feature-check">✓</div>
-                                <span>24/7 tenant support</span>
+                                <span>Flexible service plans starting at $19.99/month</span>
                             </div>
                             <div className="about-feature">
                                 <div className="feature-check">✓</div>
-                                <span>Mobile-first design</span>
+                                <span>Property marketplace with 5-12% rental yields</span>
                             </div>
                         </div>
                         <button
@@ -1166,11 +1168,11 @@ function HomeScreen({ onNavigate }) { /* ... keep existing HomeScreen code ... *
                                 <div className="image-overlay">
                                     <div className="overlay-stats">
                                         <div className="overlay-stat">
-                                            <span className="stat-number">500+</span>
+                                            <span className="stat-number">100+</span>
                                             <span className="stat-label">Properties</span>
                                         </div>
                                         <div className="overlay-stat">
-                                            <span className="stat-number">10K+</span>
+                                            <span className="stat-number">200+</span>
                                             <span className="stat-label">Tenants</span>
                                         </div>
                                     </div>
@@ -1185,9 +1187,10 @@ function HomeScreen({ onNavigate }) { /* ... keep existing HomeScreen code ... *
             <section className="cta-section">
                 <div className="container">
                     <div className="cta-content">
-                        <h2 className="cta-title">Ready to Transform Your Property Management?</h2>
+                        <h2 className="cta-title">Ready to Transform Your Home & Property Portfolio?</h2>
                         <p className="cta-description">
-                            Join thousands of property managers who trust Nebula to streamline their operations
+                            Join hundreds of homeowners and investors who trust Nebula STAT for smart home technology 
+                            and property management with 5-12% rental yields
                         </p>
                         <div className="cta-actions">
                             <button
