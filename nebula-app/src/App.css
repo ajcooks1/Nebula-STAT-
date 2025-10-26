@@ -1943,6 +1943,18 @@ html, body {
   border-radius: 12px;
   padding: 1.5rem;
   transition: all 0.3s ease;
+  color: #000000;
+}
+
+.ticket-card * {
+  color: #000000;
+}
+
+.ticket-card h3,
+.ticket-card h4,
+.ticket-card p,
+.ticket-card span {
+  color: #000000;
 }
 
 .ticket-card:hover {
@@ -1970,13 +1982,13 @@ html, body {
 }
 
 .ticket-date {
-  color: #718096;
+  color: #000000;
   font-size: 0.8rem;
 }
 
 .ticket-description {
   margin: 0 0 1rem 0;
-  color: #2d3748;
+  color: #000000;
   line-height: 1.6;
 }
 
@@ -2492,22 +2504,19 @@ html, body {
   gap: 1rem;
   font-size: 2.5rem;
   font-weight: 700;
-  color: white;
+  color: #000000;
   margin: 0 0 0.5rem 0;
-  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .page-icon {
   font-size: 3rem;
-  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.5));
 }
 
 .page-subtitle {
   font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: #4a5568;
   margin: 0;
-  font-weight: 300;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  font-weight: 400;
 }
 
 /* Requests Page */
