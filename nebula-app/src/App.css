@@ -4167,3 +4167,194 @@ input:checked + .toggle-slider:before {
 /* Styles for the Alert Modal         */
 /* ==================================== */
 /* ... (modal styles remain the same) ... */
+/* ==================================== */
+/* Styles for the Alert Modal         */
+/* ==================================== */
+
+.modal-backdrop {
+  position: fixed; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgba(0, 0, 0, 0.65); /* Black w/ opacity */
+  z-index: 1000; /* Sit on top */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: auto;
+  padding: 1.5rem; /* More generous padding */
+  border-radius: 12px;
+  width: 90%;
+  max-width: 650px; /* Limit width */
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25); /* Stronger shadow */
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh; /* Limit height */
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-30px) scale(0.95); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0; /* Lighter border */
+  margin-bottom: 1rem; /* Space below header */
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.6rem; /* Larger title */
+  color: #2d3748;
+  font-weight: 700;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 2.2rem; /* Larger close icon */
+  font-weight: bold;
+  color: #718096;
+  cursor: pointer;
+  padding: 0 10px;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+.modal-close-btn:hover {
+  color: #4a5568;
+}
+
+.modal-body {
+  padding: 0 5px; /* Minimal horizontal padding, actual cards handle padding */
+  overflow-y: auto; /* Enable scroll for long lists */
+  flex-grow: 1;
+  margin-bottom: 1rem; /* Space before footer */
+}
+
+.alerts-list-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem; /* Space between alert cards */
+}
+
+/* Re-use thermostat card styles inside modal, with adjustments */
+.alerts-list-modal .thermostat-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* More pronounced shadow for modal cards */
+  border: 1px solid #e2e8f0;
+  padding: 1.25rem; /* Consistent padding */
+  display: flex; /* Flex layout for better control */
+  flex-direction: column;
+  border-radius: 8px; /* Ensure cards are rounded */
+  /* Apply alert background colors */
+  background-color: #fff; /* Default */
+}
+.alerts-list-modal .alert-low { background-color: #fffde7; border-left: 4px solid #f6e05e; }
+.alerts-list-modal .alert-medium { background-color: #fff8e1; border-left: 4px solid #f6ad55; }
+.alerts-list-modal .alert-high { background-color: #fff5f5; border-left: 4px solid #fc8181; }
+
+
+.alerts-list-modal .alert h4 {
+  margin-top: 0;
+  margin-bottom: 0.6rem; /* Space below title */
+  font-size: 1.1rem; /* Title size in modal */
+  border: none;
+  padding-bottom: 0;
+  color: #2d3748;
+}
+
+.alerts-list-modal .alert-message {
+  font-size: 0.95rem; /* Message size in modal */
+  margin-bottom: 0.8rem; /* Space below message */
+  color: #4a5568;
+  line-height: 1.4;
+}
+
+.alerts-list-modal .alert-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #718096;
+  margin-bottom: 1rem; /* Space before actions */
+}
+
+.alerts-list-modal .alert-severity {
+  padding: 0.2rem 0.6rem; /* Adjusted padding */
+  border-radius: 4px;
+  color: white;
+  text-transform: capitalize;
+  font-weight: 500;
+}
+/* Use severity colors defined elsewhere if available, or redefine */
+/* .severity-low { background-color: #d69e2e; } */
+/* .severity-medium { background-color: #dd6b20; } */
+/* .severity-high { background-color: #c53030; } */
+
+.alerts-list-modal .alert-actions {
+  margin-top: auto; /* Push actions to the bottom if content is short */
+  display: flex;
+  gap: 0.75rem; /* Space between buttons */
+  justify-content: flex-end; /* Align buttons to the right */
+}
+
+.alerts-list-modal .alert-actions .btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  white-space: nowrap; /* Prevent button text from wrapping */
+}
+.scheduled-message {
+  font-size: 0.9rem;
+  color: #38a169;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+
+.modal-footer {
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end; /* Align button to the right */
+  gap: 0.75rem; /* Space between buttons in footer */
+}
+
+/* Ensure empty state message looks okay */
+.modal-body .empty-state {
+  text-align: center;
+  color: #666;
+  padding: 30px 20px; /* More padding for empty state */
+  font-size: 1.1rem;
+}
+
+/* Ensure Basic Button Styles Exist */
+.btn {
+  padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer;
+  font-weight: bold; transition: background-color 0.2s ease, box-shadow 0.2s ease; font-size: 0.9rem;
+}
+.btn-primary { background-color: #4299e1; color: white; }
+.btn-primary:hover { background-color: #3182ce; box-shadow: 0 2px 8px rgba(66, 153, 225, 0.3); }
+.btn-secondary { background-color: #e2e8f0; color: #4a5568; }
+.btn-secondary:hover { background-color: #cbd5e0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); }
+.btn-warning { background-color: #ed8936; color: white; }
+.btn-warning:hover { background-color: #dd6b20; box-shadow: 0 2px 8px rgba(237, 137, 54, 0.3); }
+.btn:disabled { cursor: not-allowed; opacity: 0.6; }
+.btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }

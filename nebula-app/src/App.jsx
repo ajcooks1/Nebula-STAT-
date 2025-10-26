@@ -1,26 +1,123 @@
-import { useEffect, useState } from 'react'
-import './App.css'
+import { useEffect, useState } from 'react';
+import './App.css';
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/$/, '')
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/$/, '');
 
 // Utility functions
 const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  })
-}
+  // Use try-catch for robust date parsing
+  try {
+    return new Date(date).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  } catch (e) {
+    return 'Invalid Date';
+  }
+};
 
 const formatTime = (date) => {
-  return new Date(date).toLocaleTimeString('en-US', { 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  })
+  try {
+    return new Date(date).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (e) {
+    return 'Invalid Time';
+  }
+};
+
+
+// --- HELPER COMPONENTS (Place BEFORE DashboardPage) ---
+
+// Simple component for showing a progress bar
+function ProgressBar({ label, value, max, unit }) {
+  // Ensure value and max are numbers and max is not zero
+  const numValue = Number(value);
+  const numMax = Number(max);
+  let percentage = 0;
+  if (!isNaN(numValue) && !isNaN(numMax) && numMax > 0) {
+    percentage = Math.min(100, Math.max(0, (numValue / numMax) * 100));
+  }
+
+  return (
+    <div className="progress-bar-container">
+      {label && <label>{label}</label>}
+      <div className="progress-bar">
+        <div className="progress-bar-fill" style={{ width: `${percentage}%` }}></div>
+      </div>
+      {/* Display value only if valid */}
+      <span>{!isNaN(numValue) ? `${numValue}${unit}` : `--${unit}`}</span>
+    </div>
+  );
 }
 
+// Component for the Alert Modal
+function AlertsModal({ alerts, onClose, onSchedule, onDismiss, scheduledAlertId, formatAlertTime }) {
+  if (!alerts || !Array.isArray(alerts)) {
+    console.error("AlertsModal received invalid alerts prop:", alerts);
+    return null;
+  }
+
+  const getSeverityClass = (severity) => `severity-${(severity || 'unknown').toLowerCase()}`;
+  const getAlertClass = (severity) => `alert-${(severity || 'unknown').toLowerCase()}`;
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Thermostat Alerts</h2>
+          <button onClick={onClose} className="modal-close-btn" aria-label="Close modal">&times;</button>
+        </div>
+        <div className="modal-body">
+          {alerts.length === 0 ? (
+            <div className="empty-state">No active alerts.</div>
+          ) : (
+            <div className="alerts-list-modal">
+              {alerts.map(alert => (
+                <div key={alert.id} className={`thermostat-card alert ${getAlertClass(alert.severity)}`}>
+                  <h4>🚨 Alert: {alert.code || 'N/A'}</h4>
+                  <p className="alert-message">{alert.message || 'No description'}</p>
+                  <div className="alert-meta">
+                    <span className={`alert-severity ${getSeverityClass(alert.severity)}`}>{alert.severity || 'Unknown'}</span>
+                    {/* Ensure timestamp exists before formatting */}
+                    <span className="alert-time">{alert.timestamp ? formatAlertTime(alert.timestamp) : 'No timestamp'}</span>
+                  </div>
+                  <div className="alert-actions">
+                    {scheduledAlertId === alert.id ? (
+                      <span className="scheduled-message">✅ Scheduled</span>
+                    ) : (
+                      <>
+                        <button onClick={() => onSchedule(alert.id)} className="btn btn-warning btn-sm">
+                          Schedule Tech
+                        </button>
+                        <button onClick={() => onDismiss(alert.id)} className="btn btn-secondary btn-sm">
+                          Dismiss
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="modal-footer">
+          <button onClick={onClose} className="btn btn-secondary">Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+// --- END HELPER COMPONENTS ---
+
+
+// --- PAGE COMPONENTS ---
+
 function Requests() {
+  // ... Your existing Requests code ...
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -102,11 +199,11 @@ function Requests() {
             <form onSubmit={handleSubmit} className="request-form">
               <div className="form-group">
                 <label htmlFor="description">Description *</label>
-                <textarea 
+                <textarea
                   id="description"
-                  value={text} 
-                  onChange={e => setText(e.target.value)} 
-                  rows={4} 
+                  value={text}
+                  onChange={e => setText(e.target.value)}
+                  rows={4}
                   placeholder="Describe your maintenance request in detail..."
                   required
                   className="form-textarea"
@@ -115,11 +212,11 @@ function Requests() {
               </div>
               <div className="form-group">
                 <label htmlFor="photoUrl">Photo URL (optional)</label>
-                <input 
+                <input
                   id="photoUrl"
                   type="url"
-                  value={photoUrl} 
-                  onChange={e => setPhotoUrl(e.target.value)} 
+                  value={photoUrl}
+                  onChange={e => setPhotoUrl(e.target.value)}
                   placeholder="https://example.com/photo.jpg"
                   className="form-input"
                 />
@@ -127,10 +224,10 @@ function Requests() {
               </div>
               <div className="form-group">
                 <label htmlFor="tenantId">Tenant ID (optional)</label>
-                <input 
+                <input
                   id="tenantId"
-                  value={tenantId} 
-                  onChange={e => setTenantId(e.target.value)} 
+                  value={tenantId}
+                  onChange={e => setTenantId(e.target.value)}
                   placeholder="Enter your tenant ID"
                   className="form-input"
                 />
@@ -166,7 +263,7 @@ function Requests() {
               </span>
             </div>
           </div>
-          
+
           {loading ? (
             <div className="loading-state">
               <div className="loading-spinner"></div>
@@ -221,933 +318,905 @@ function Requests() {
   )
 }
 
-function MaintenanceTimes() {
-  const [tickets, setTickets] = useState([])
-  const [technicians, setTechnicians] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [filter, setFilter] = useState('all') // all, pending, scheduled, completed
+function MaintenanceTimes() { /* ... keep existing MaintenanceTimes code ... */
+    const [tickets, setTickets] = useState([])
+    const [technicians, setTechnicians] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
+    const [filter, setFilter] = useState('all') // all, pending, scheduled, completed
 
-  useEffect(() => {
-    loadData()
-  }, [])
+    useEffect(() => {
+        loadData()
+    }, [])
 
-  async function loadData() {
-    setLoading(true)
-    setError(null)
-    try {
-      // Load tickets first
-      const ticketsRes = await fetch(`${API_BASE}/tickets`)
-      if (!ticketsRes.ok) throw new Error(await ticketsRes.text())
-      const ticketsData = await ticketsRes.json()
-      setTickets(ticketsData.tickets ?? [])
-      
-      // Try to load technicians, but don't fail if the table doesn't exist
-      try {
-        const techniciansRes = await fetch(`${API_BASE}/technicians`)
-        if (techniciansRes.ok) {
-          const techniciansData = await techniciansRes.json()
-          setTechnicians(techniciansData.technicians ?? [])
-        } else {
-          // If technicians endpoint fails, just use empty array
-          setTechnicians([])
+    async function loadData() {
+        setLoading(true)
+        setError(null)
+        try {
+            // Load tickets first
+            const ticketsRes = await fetch(`${API_BASE}/tickets`)
+            if (!ticketsRes.ok) throw new Error(await ticketsRes.text())
+            const ticketsData = await ticketsRes.json()
+            setTickets(ticketsData.tickets ?? [])
+
+            // Try to load technicians, but don't fail if the table doesn't exist
+            try {
+                const techniciansRes = await fetch(`${API_BASE}/technicians`)
+                if (techniciansRes.ok) {
+                    const techniciansData = await techniciansRes.json()
+                    setTechnicians(techniciansData.technicians ?? [])
+                } else {
+                    // If technicians endpoint fails, just use empty array
+                    setTechnicians([])
+                }
+            } catch (technicianError) {
+                // If technicians table doesn't exist, just use empty array
+                setTechnicians([])
+            }
+        } catch (e) {
+            setError(e.message)
+        } finally {
+            setLoading(false)
         }
-      } catch (technicianError) {
-        // If technicians table doesn't exist, just use empty array
-        setTechnicians([])
-      }
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
     }
-  }
 
-  // Get technician name by ID
-  const getTechnicianName = (technicianId) => {
-    if (!technicianId) return 'Unassigned'
-    const technician = technicians.find(t => t.id === technicianId)
-    return technician ? technician.name : `Technician ${technicianId}`
-  }
-
-  // Categorize tickets by status and time
-  const now = new Date()
-  const categorizedTickets = {
-    pending: tickets.filter(ticket => ticket.status === 'Triaged'),
-    scheduled: tickets.filter(ticket => {
-      if (ticket.status === 'Scheduled') return true
-      if (ticket.scheduled_at) {
-        const scheduledDate = new Date(ticket.scheduled_at)
-        return scheduledDate >= now
-      }
-      return false
-    }),
-    completed: tickets.filter(ticket => ticket.status === 'Completed'),
-    urgent: tickets.filter(ticket => ticket.severity === 'high' && ticket.status !== 'Completed')
-  }
-
-  const filteredTickets = filter === 'all' ? tickets : categorizedTickets[filter]
-
-  const getStatusColor = (status, severity) => {
-    if (status === 'Completed') return 'completed'
-    if (status === 'Scheduled') return 'scheduled'
-    if (severity === 'high') return 'urgent'
-    return 'pending'
-  }
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'Completed': return '✅'
-      case 'Scheduled': return '📅'
-      case 'Triaged': return '⏳'
-      default: return '🔧'
+    // Get technician name by ID
+    const getTechnicianName = (technicianId) => {
+        if (!technicianId) return 'Unassigned'
+        const technician = technicians.find(t => t.id === technicianId)
+        return technician ? technician.name : `Technician ${technicianId}`
     }
-  }
 
-  if (loading) {
+    // Categorize tickets by status and time
+    const now = new Date()
+    const categorizedTickets = {
+        pending: tickets.filter(ticket => ticket.status === 'Triaged'),
+        scheduled: tickets.filter(ticket => {
+            if (ticket.status === 'Scheduled') return true
+            if (ticket.scheduled_at) {
+                const scheduledDate = new Date(ticket.scheduled_at)
+                return scheduledDate >= now
+            }
+            return false
+        }),
+        completed: tickets.filter(ticket => ticket.status === 'Completed'),
+        urgent: tickets.filter(ticket => ticket.severity === 'high' && ticket.status !== 'Completed')
+    }
+
+    const filteredTickets = filter === 'all' ? tickets : categorizedTickets[filter]
+
+    const getStatusColor = (status, severity) => {
+        if (status === 'Completed') return 'completed'
+        if (status === 'Scheduled') return 'scheduled'
+        if (severity === 'high') return 'urgent'
+        return 'pending'
+    }
+
+    const getStatusIcon = (status) => {
+        switch (status) {
+            case 'Completed': return '✅'
+            case 'Scheduled': return '📅'
+            case 'Triaged': return '⏳'
+            default: return '🔧'
+        }
+    }
+
+    if (loading) {
+        return (
+            <div className="maintenance-page">
+                <div className="page-header">
+                    <h1 className="page-title">
+                        <span className="page-icon">🔧</span>
+                        Maintenance Schedule
+                    </h1>
+                    <p className="page-subtitle">View maintenance hours and scheduled services</p>
+                </div>
+                <div className="maintenance-content">
+                    <div className="loading-state">
+                        <div className="loading-spinner"></div>
+                        <p>Loading maintenance data...</p>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
-      <div className="maintenance-page">
-        <div className="page-header">
-          <h1 className="page-title">
-            <span className="page-icon">🔧</span>
-            Maintenance Schedule
-          </h1>
-          <p className="page-subtitle">View maintenance hours and scheduled services</p>
-        </div>
-        <div className="maintenance-content">
-          <div className="loading-state">
-            <div className="loading-spinner"></div>
-            <p>Loading maintenance data...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="maintenance-page">
-      <div className="page-header">
-        <h1 className="page-title">
-          <span className="page-icon">🔧</span>
-          Maintenance Schedule
-        </h1>
-        <p className="page-subtitle">View maintenance hours and scheduled services</p>
-      </div>
-
-      <div className="maintenance-content">
-        {/* Filter Tabs */}
-        <div className="maintenance-filters">
-          <button 
-            className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            All ({tickets.length})
-          </button>
-          <button 
-            className={`filter-tab ${filter === 'pending' ? 'active' : ''}`}
-            onClick={() => setFilter('pending')}
-          >
-            Pending ({categorizedTickets.pending.length})
-          </button>
-          <button 
-            className={`filter-tab ${filter === 'scheduled' ? 'active' : ''}`}
-            onClick={() => setFilter('scheduled')}
-          >
-            Scheduled ({categorizedTickets.scheduled.length})
-          </button>
-          <button 
-            className={`filter-tab ${filter === 'completed' ? 'active' : ''}`}
-            onClick={() => setFilter('completed')}
-          >
-            Completed ({categorizedTickets.completed.length})
-          </button>
-          <button 
-            className={`filter-tab ${filter === 'urgent' ? 'active' : ''}`}
-            onClick={() => setFilter('urgent')}
-          >
-            Urgent ({categorizedTickets.urgent.length})
-          </button>
-        </div>
-
-        {/* Maintenance Hours Info */}
-        <div className="maintenance-info-section">
-          <div className="maintenance-grid">
-            <div className="maintenance-card">
-              <div className="card-header">
-                <div className="card-icon">⏰</div>
-                <h3 className="card-title">Regular Hours</h3>
-              </div>
-              <div className="card-content">
-                <div className="schedule-item">
-                  <span className="schedule-days">Monday - Friday</span>
-                  <span className="schedule-time">8:00 AM - 5:00 PM</span>
-                </div>
-                <div className="schedule-item">
-                  <span className="schedule-days">Saturday</span>
-                  <span className="schedule-time">9:00 AM - 3:00 PM</span>
-                </div>
-                <div className="schedule-item">
-                  <span className="schedule-days">Sunday</span>
-                  <span className="schedule-time">Emergency only</span>
-                </div>
-              </div>
+        <div className="maintenance-page">
+            <div className="page-header">
+                <h1 className="page-title">
+                    <span className="page-icon">🔧</span>
+                    Maintenance Schedule
+                </h1>
+                <p className="page-subtitle">View maintenance hours and scheduled services</p>
             </div>
 
-            <div className="maintenance-card emergency">
-              <div className="card-header">
-                <div className="card-icon">🚨</div>
-                <h3 className="card-title">Emergency Service</h3>
-              </div>
-              <div className="card-content">
-                <p className="emergency-text">Available 24/7 for urgent issues</p>
-                <div className="contact-info">
-                  <span className="contact-label">Emergency Hotline:</span>
-                  <span className="contact-value">(555) 123-MAINT</span>
+            <div className="maintenance-content">
+                {/* Filter Tabs */}
+                <div className="maintenance-filters">
+                    <button
+                        className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
+                        onClick={() => setFilter('all')}
+                    >
+                        All ({tickets.length})
+                    </button>
+                    <button
+                        className={`filter-tab ${filter === 'pending' ? 'active' : ''}`}
+                        onClick={() => setFilter('pending')}
+                    >
+                        Pending ({categorizedTickets.pending.length})
+                    </button>
+                    <button
+                        className={`filter-tab ${filter === 'scheduled' ? 'active' : ''}`}
+                        onClick={() => setFilter('scheduled')}
+                    >
+                        Scheduled ({categorizedTickets.scheduled.length})
+                    </button>
+                    <button
+                        className={`filter-tab ${filter === 'completed' ? 'active' : ''}`}
+                        onClick={() => setFilter('completed')}
+                    >
+                        Completed ({categorizedTickets.completed.length})
+                    </button>
+                    <button
+                        className={`filter-tab ${filter === 'urgent' ? 'active' : ''}`}
+                        onClick={() => setFilter('urgent')}
+                    >
+                        Urgent ({categorizedTickets.urgent.length})
+                    </button>
                 </div>
-                <div className="emergency-note">
-                  <strong>Note:</strong> Emergency calls are for urgent safety issues only
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Maintenance Requests List */}
-        <div className="maintenance-requests-section">
-          <h3 className="section-title">
-            {filter === 'all' && 'All Maintenance Requests'}
-            {filter === 'pending' && 'Pending Requests'}
-            {filter === 'scheduled' && 'Scheduled Maintenance'}
-            {filter === 'completed' && 'Completed Maintenance'}
-            {filter === 'urgent' && 'Urgent Requests'}
-          </h3>
-
-          {error ? (
-            <div className="alert alert-error">
-              <p>Error loading maintenance requests: {error}</p>
-              <button onClick={loadData} className="btn btn-sm">Retry</button>
-            </div>
-          ) : filteredTickets.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">🔧</div>
-              <h3>No maintenance requests found</h3>
-              <p>
-                {filter === 'all' && 'No maintenance requests have been submitted yet.'}
-                {filter === 'pending' && 'No pending maintenance requests found.'}
-                {filter === 'scheduled' && 'No scheduled maintenance requests found.'}
-                {filter === 'completed' && 'No completed maintenance requests found.'}
-                {filter === 'urgent' && 'No urgent maintenance requests found.'}
-              </p>
-            </div>
-          ) : (
-            <div className="maintenance-requests-grid">
-              {filteredTickets.map(ticket => (
-                <div key={ticket.id} className={`maintenance-request-card ${getStatusColor(ticket.status, ticket.severity)}`}>
-                  <div className="request-header">
-                    <div className="request-status">
-                      <span className="status-icon">{getStatusIcon(ticket.status)}</span>
-                      <span className="status-text">{ticket.status}</span>
-                    </div>
-                    <div className="request-meta">
-                      <span className="request-category">{ticket.category}</span>
-                      <span className={`severity-badge ${ticket.severity}`}>
-                        {ticket.severity}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="request-content">
-                    <p className="request-description">{ticket.description}</p>
-                    {ticket.photo_url && (
-                      <div className="request-photo">
-                        <img src={ticket.photo_url} alt="Request photo" />
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="request-footer">
-                    <div className="request-dates">
-                      <div className="date-item">
-                        <span className="date-label">Created:</span>
-                        <span className="date-value">{formatDate(ticket.created_at)}</span>
-                      </div>
-                      {ticket.scheduled_at && (
-                        <div className="date-item">
-                          <span className="date-label">Scheduled:</span>
-                          <span className="date-value">{formatDate(ticket.scheduled_at)}</span>
+                {/* Maintenance Hours Info */}
+                <div className="maintenance-info-section">
+                    <div className="maintenance-grid">
+                        <div className="maintenance-card">
+                            <div className="card-header">
+                                <div className="card-icon">⏰</div>
+                                <h3 className="card-title">Regular Hours</h3>
+                            </div>
+                            <div className="card-content">
+                                <div className="schedule-item">
+                                    <span className="schedule-days">Monday - Friday</span>
+                                    <span className="schedule-time">8:00 AM - 5:00 PM</span>
+                                </div>
+                                <div className="schedule-item">
+                                    <span className="schedule-days">Saturday</span>
+                                    <span className="schedule-time">9:00 AM - 3:00 PM</span>
+                                </div>
+                                <div className="schedule-item">
+                                    <span className="schedule-days">Sunday</span>
+                                    <span className="schedule-time">Emergency only</span>
+                                </div>
+                            </div>
                         </div>
-                      )}
+
+                        <div className="maintenance-card emergency">
+                            <div className="card-header">
+                                <div className="card-icon">🚨</div>
+                                <h3 className="card-title">Emergency Service</h3>
+                            </div>
+                            <div className="card-content">
+                                <p className="emergency-text">Available 24/7 for urgent issues</p>
+                                <div className="contact-info">
+                                    <span className="contact-label">Emergency Hotline:</span>
+                                    <span className="contact-value">(555) 123-MAINT</span>
+                                </div>
+                                <div className="emergency-note">
+                                    <strong>Note:</strong> Emergency calls are for urgent safety issues only
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="request-technician">
-                      <span className="technician-label">Technician:</span>
-                      <span className="technician-name">{getTechnicianName(ticket.technician_id)}</span>
-                    </div>
-                  </div>
                 </div>
-              ))}
+
+                {/* Maintenance Requests List */}
+                <div className="maintenance-requests-section">
+                    <h3 className="section-title">
+                        {filter === 'all' && 'All Maintenance Requests'}
+                        {filter === 'pending' && 'Pending Requests'}
+                        {filter === 'scheduled' && 'Scheduled Maintenance'}
+                        {filter === 'completed' && 'Completed Maintenance'}
+                        {filter === 'urgent' && 'Urgent Requests'}
+                    </h3>
+
+                    {error ? (
+                        <div className="alert alert-error">
+                            <p>Error loading maintenance requests: {error}</p>
+                            <button onClick={loadData} className="btn btn-sm">Retry</button>
+                        </div>
+                    ) : filteredTickets.length === 0 ? (
+                        <div className="empty-state">
+                            <div className="empty-icon">🔧</div>
+                            <h3>No maintenance requests found</h3>
+                            <p>
+                                {filter === 'all' && 'No maintenance requests have been submitted yet.'}
+                                {filter === 'pending' && 'No pending maintenance requests found.'}
+                                {filter === 'scheduled' && 'No scheduled maintenance requests found.'}
+                                {filter === 'completed' && 'No completed maintenance requests found.'}
+                                {filter === 'urgent' && 'No urgent maintenance requests found.'}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="maintenance-requests-grid">
+                            {filteredTickets.map(ticket => (
+                                <div key={ticket.id} className={`maintenance-request-card ${getStatusColor(ticket.status, ticket.severity)}`}>
+                                    <div className="request-header">
+                                        <div className="request-status">
+                                            <span className="status-icon">{getStatusIcon(ticket.status)}</span>
+                                            <span className="status-text">{ticket.status}</span>
+                                        </div>
+                                        <div className="request-meta">
+                                            <span className="request-category">{ticket.category}</span>
+                                            <span className={`severity-badge ${ticket.severity}`}>
+                                                {ticket.severity}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="request-content">
+                                        <p className="request-description">{ticket.description}</p>
+                                        {ticket.photo_url && (
+                                            <div className="request-photo">
+                                                <img src={ticket.photo_url} alt="Request photo" />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="request-footer">
+                                        <div className="request-dates">
+                                            <div className="date-item">
+                                                <span className="date-label">Created:</span>
+                                                <span className="date-value">{formatDate(ticket.created_at)}</span>
+                                            </div>
+                                            {ticket.scheduled_at && (
+                                                <div className="date-item">
+                                                    <span className="date-label">Scheduled:</span>
+                                                    <span className="date-value">{formatDate(ticket.scheduled_at)}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="request-technician">
+                                            <span className="technician-label">Technician:</span>
+                                            <span className="technician-name">{getTechnicianName(ticket.technician_id)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
-          )}
         </div>
-      </div>
-    </div>
-  )
+    )
 }
 
-function Payments() {
-  const [balance] = useState(0.00)
-  const [recentPayments] = useState([])
-  
-  return (
-    <div className="payments-page">
-      <div className="page-header">
-        <h1 className="page-title">
-          <span className="page-icon">💳</span>
-          Payment Center
-        </h1>
-        <p className="page-subtitle">Manage your payments and billing information</p>
-      </div>
+function Payments() { /* ... keep existing Payments code ... */
+    const [balance] = useState(0.00)
+    const [recentPayments] = useState([])
 
-      <div className="payments-content">
-        <div className="balance-section">
-          <div className="balance-card">
-            <div className="balance-header">
-              <h2 className="balance-title">Current Balance</h2>
-              <div className="balance-status">All caught up!</div>
+    return (
+        <div className="payments-page">
+            <div className="page-header">
+                <h1 className="page-title">
+                    <span className="page-icon">💳</span>
+                    Payment Center
+                </h1>
+                <p className="page-subtitle">Manage your payments and billing information</p>
             </div>
-            <div className="balance-amount">
-              <span className="currency">$</span>
-              <span className="amount">{balance.toFixed(2)}</span>
-            </div>
-            <p className="balance-description">No outstanding payments at this time</p>
-          </div>
-        </div>
 
-        <div className="payments-grid">
-          <div className="payment-card">
-            <div className="card-header">
-              <div className="card-icon">💳</div>
-              <h3 className="card-title">Payment Methods</h3>
-            </div>
-            <div className="card-content">
-              <div className="payment-methods">
-                <div className="method-item">
-                  <span className="method-icon">💳</span>
-                  <span className="method-name">Credit Card</span>
-                  <span className="method-status">Active</span>
-                </div>
-                <div className="method-item">
-                  <span className="method-icon">🏦</span>
-                  <span className="method-name">Bank Transfer</span>
-                  <span className="method-status">Active</span>
-                </div>
-                <div className="method-item">
-                  <span className="method-icon">📄</span>
-                  <span className="method-name">Check</span>
-                  <span className="method-status">Active</span>
-                </div>
-              </div>
-              <button className="btn btn-primary btn-full">
-                <span className="btn-icon">➕</span>
-                Add Payment Method
-              </button>
-            </div>
-          </div>
-
-          <div className="payment-card">
-            <div className="card-header">
-              <div className="card-icon">📊</div>
-              <h3 className="card-title">Payment History</h3>
-            </div>
-            <div className="card-content">
-              {recentPayments.length === 0 ? (
-                <div className="empty-history">
-                  <div className="empty-icon">📝</div>
-                  <p>No recent payments to display</p>
-                </div>
-              ) : (
-                <div className="payment-list">
-                  {recentPayments.map((payment, index) => (
-                    <div key={index} className="payment-item">
-                      <div className="payment-info">
-                        <span className="payment-description">{payment.description}</span>
-                        <span className="payment-date">{payment.date}</span>
-                      </div>
-                      <span className="payment-amount">${payment.amount}</span>
+            <div className="payments-content">
+                <div className="balance-section">
+                    <div className="balance-card">
+                        <div className="balance-header">
+                            <h2 className="balance-title">Current Balance</h2>
+                            <div className="balance-status">All caught up!</div>
+                        </div>
+                        <div className="balance-amount">
+                            <span className="currency">$</span>
+                            <span className="amount">{balance.toFixed(2)}</span>
+                        </div>
+                        <p className="balance-description">No outstanding payments at this time</p>
                     </div>
-                  ))}
                 </div>
-              )}
-              <button className="btn btn-secondary btn-full">
-                <span className="btn-icon">📋</span>
-                View Full History
-              </button>
-            </div>
-          </div>
 
-          <div className="payment-card">
-            <div className="card-header">
-              <div className="card-icon">⚙️</div>
-              <h3 className="card-title">Billing Settings</h3>
+                <div className="payments-grid">
+                    <div className="payment-card">
+                        <div className="card-header">
+                            <div className="card-icon">💳</div>
+                            <h3 className="card-title">Payment Methods</h3>
+                        </div>
+                        <div className="card-content">
+                            <div className="payment-methods">
+                                <div className="method-item">
+                                    <span className="method-icon">💳</span>
+                                    <span className="method-name">Credit Card</span>
+                                    <span className="method-status">Active</span>
+                                </div>
+                                <div className="method-item">
+                                    <span className="method-icon">🏦</span>
+                                    <span className="method-name">Bank Transfer</span>
+                                    <span className="method-status">Active</span>
+                                </div>
+                                <div className="method-item">
+                                    <span className="method-icon">📄</span>
+                                    <span className="method-name">Check</span>
+                                    <span className="method-status">Active</span>
+                                </div>
+                            </div>
+                            <button className="btn btn-primary btn-full">
+                                <span className="btn-icon">➕</span>
+                                Add Payment Method
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="payment-card">
+                        <div className="card-header">
+                            <div className="card-icon">📊</div>
+                            <h3 className="card-title">Payment History</h3>
+                        </div>
+                        <div className="card-content">
+                            {recentPayments.length === 0 ? (
+                                <div className="empty-history">
+                                    <div className="empty-icon">📝</div>
+                                    <p>No recent payments to display</p>
+                                </div>
+                            ) : (
+                                <div className="payment-list">
+                                    {recentPayments.map((payment, index) => (
+                                        <div key={index} className="payment-item">
+                                            <div className="payment-info">
+                                                <span className="payment-description">{payment.description}</span>
+                                                <span className="payment-date">{payment.date}</span>
+                                            </div>
+                                            <span className="payment-amount">${payment.amount}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <button className="btn btn-secondary btn-full">
+                                <span className="btn-icon">📋</span>
+                                View Full History
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="payment-card">
+                        <div className="card-header">
+                            <div className="card-icon">⚙️</div>
+                            <h3 className="card-title">Billing Settings</h3>
+                        </div>
+                        <div className="card-content">
+                            <div className="setting-item">
+                                <span className="setting-label">Auto-pay</span>
+                                <label className="toggle-switch">
+                                    <input type="checkbox" />
+                                    <span className="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div className="setting-item">
+                                <span className="setting-label">Email notifications</span>
+                                <label className="toggle-switch">
+                                    <input type="checkbox" defaultChecked />
+                                    <span className="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div className="setting-item">
+                                <span className="setting-label">Paperless billing</span>
+                                <label className="toggle-switch">
+                                    <input type="checkbox" defaultChecked />
+                                    <span className="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div className="card-content">
-              <div className="setting-item">
-                <span className="setting-label">Auto-pay</span>
-                <label className="toggle-switch">
-                  <input type="checkbox" />
-                  <span className="toggle-slider"></span>
-                </label>
-              </div>
-              <div className="setting-item">
-                <span className="setting-label">Email notifications</span>
-                <label className="toggle-switch">
-                  <input type="checkbox" defaultChecked />
-                  <span className="toggle-slider"></span>
-                </label>
-              </div>
-              <div className="setting-item">
-                <span className="setting-label">Paperless billing</span>
-                <label className="toggle-switch">
-                  <input type="checkbox" defaultChecked />
-                  <span className="toggle-slider"></span>
-                </label>
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
-    </div>
-  )
+    )
 }
 
-function Chat() {
-  const [messages, setMessages] = useState([
-    { 
-      id: 1, 
-      text: "Welcome to Nebula STAT Chat! How can we help you today?", 
-      sender: 'system', 
-      timestamp: new Date(),
-      avatar: '🤖'
+function Chat() { /* ... keep existing Chat code ... */
+    const [messages, setMessages] = useState([
+        {
+            id: 1,
+            text: "Welcome to Nebula STAT Chat! How can we help you today?",
+            sender: 'system',
+            timestamp: new Date(),
+            avatar: '🤖'
+        }
+    ])
+    const [newMessage, setNewMessage] = useState('')
+    const [isTyping, setIsTyping] = useState(false)
+
+    const handleSendMessage = (e) => {
+        e.preventDefault()
+        if (!newMessage.trim()) return
+
+        const message = {
+            id: messages.length + 1,
+            text: newMessage,
+            sender: 'user',
+            timestamp: new Date(),
+            avatar: '👤'
+        }
+
+        setMessages(prev => [...prev, message])
+        setNewMessage('')
+        setIsTyping(true)
+
+        // Simulate response
+        setTimeout(() => {
+            const responses = [
+                "Thank you for your message. Our team will get back to you shortly.",
+                "I understand your concern. Let me help you with that.",
+                "That's a great question! Let me check our records for you.",
+                "I'll forward this to our maintenance team right away.",
+                "Is there anything else I can help you with today?"
+            ]
+
+            const response = {
+                id: messages.length + 2, // Potential issue: ID might collide if multiple messages sent quickly
+                text: responses[Math.floor(Math.random() * responses.length)],
+                sender: 'system',
+                timestamp: new Date(),
+                avatar: '🤖'
+            }
+            setMessages(prev => [...prev, response])
+            setIsTyping(false)
+        }, 1500)
     }
-  ])
-  const [newMessage, setNewMessage] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
 
-  const handleSendMessage = (e) => {
-    e.preventDefault()
-    if (!newMessage.trim()) return
-    
-    const message = {
-      id: messages.length + 1,
-      text: newMessage,
-      sender: 'user',
-      timestamp: new Date(),
-      avatar: '👤'
-    }
-    
-    setMessages(prev => [...prev, message])
-    setNewMessage('')
-    setIsTyping(true)
-    
-    // Simulate response
-    setTimeout(() => {
-      const responses = [
-        "Thank you for your message. Our team will get back to you shortly.",
-        "I understand your concern. Let me help you with that.",
-        "That's a great question! Let me check our records for you.",
-        "I'll forward this to our maintenance team right away.",
-        "Is there anything else I can help you with today?"
-      ]
-      
-      const response = {
-        id: messages.length + 2,
-        text: responses[Math.floor(Math.random() * responses.length)],
-        sender: 'system',
-        timestamp: new Date(),
-        avatar: '🤖'
-      }
-      setMessages(prev => [...prev, response])
-      setIsTyping(false)
-    }, 1500)
-  }
+    return (
+        <div className="chat-page">
+            <div className="page-header">
+                <h1 className="page-title">
+                    <span className="page-icon">💬</span>
+                    Live Chat Support
+                </h1>
+                <p className="page-subtitle">Get instant help from our support team</p>
+            </div>
 
-  return (
-    <div className="chat-page">
-      <div className="page-header">
-        <h1 className="page-title">
-          <span className="page-icon">💬</span>
-          Live Chat Support
-        </h1>
-        <p className="page-subtitle">Get instant help from our support team</p>
-      </div>
-
-      <div className="chat-container">
-        <div className="chat-header">
-          <div className="chat-status">
-            <div className="status-indicator online"></div>
-            <span className="status-text">Support team online</span>
-          </div>
-          <div className="chat-actions">
-            <button className="btn btn-secondary btn-sm">
-              <span className="btn-icon">📞</span>
-              Call Support
-            </button>
-          </div>
-        </div>
-
-        <div className="chat-messages">
-          {messages.map(message => (
-            <div key={message.id} className={`message ${message.sender}`}>
-              <div className="message-avatar">
-                {message.avatar}
-              </div>
-              <div className="message-bubble">
-                <div className="message-content">
-                  {message.text}
-                </div>
-                <div className="message-time">
-                  {formatTime(message.timestamp)}
-                </div>
-              </div>
-            </div>
-          ))}
-          {isTyping && (
-            <div className="message system">
-              <div className="message-avatar">🤖</div>
-              <div className="message-bubble">
-                <div className="typing-indicator">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <form onSubmit={handleSendMessage} className="chat-input">
-          <div className="input-group">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={e => setNewMessage(e.target.value)}
-              placeholder="Type your message..."
-              className="message-input"
-              disabled={isTyping}
-            />
-            <button 
-              type="submit" 
-              className="btn btn-primary send-button"
-              disabled={!newMessage.trim() || isTyping}
-            >
-              <span className="btn-icon">📤</span>
-              Send
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-// New Page Components
-function Dashboard() {
-  return (
-    <div className="tab-content">
-      <div className="section">
-        <h2>Dashboard</h2>
-        <div className="dashboard-grid">
-          <div className="dashboard-card">
-            <h3>📊 Overview</h3>
-            <p>Welcome to your property management dashboard. Here you can see all your key metrics and recent activity.</p>
-          </div>
-          <div className="dashboard-card">
-            <h3>🏠 Properties</h3>
-            <p>Manage your properties, view occupancy rates, and track maintenance schedules.</p>
-          </div>
-          <div className="dashboard-card">
-            <h3>💰 Financials</h3>
-            <p>Track rent collection, expenses, and financial performance across all properties.</p>
-          </div>
-          <div className="dashboard-card">
-            <h3>📈 Analytics</h3>
-            <p>View detailed reports and analytics to make informed decisions about your properties.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function Notifications() {
-  const notifications = [
-    { id: 1, title: "New Maintenance Request", message: "A new maintenance request has been submitted for Unit 3A", time: "2 hours ago", type: "maintenance" },
-    { id: 2, title: "Payment Received", message: "Rent payment received from John Smith for Unit 2B", time: "4 hours ago", type: "payment" },
-    { id: 3, title: "Scheduled Maintenance", message: "HVAC maintenance scheduled for tomorrow at 10 AM", time: "1 day ago", type: "schedule" },
-    { id: 4, title: "System Update", message: "Nebula PM has been updated with new features", time: "2 days ago", type: "system" }
-  ]
-
-  return (
-    <div className="tab-content">
-      <div className="section">
-        <h2>Notifications</h2>
-        <div className="notifications-list">
-          {notifications.map(notification => (
-            <div key={notification.id} className={`notification-card notification-${notification.type}`}>
-              <div className="notification-content">
-                <h3>{notification.title}</h3>
-                <p>{notification.message}</p>
-                <span className="notification-time">{notification.time}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function Profile() {
-  return (
-    <div className="tab-content">
-      <div className="section">
-        <h2>Profile Settings</h2>
-        <div className="profile-content">
-          <div className="profile-info">
-            <div className="profile-avatar">
-              <span className="avatar-icon">👤</span>
-            </div>
-            <div className="profile-details">
-              <h3>John Doe</h3>
-              <p>Property Manager</p>
-              <p>john.doe@nebula-pm.com</p>
-            </div>
-          </div>
-          <div className="profile-sections">
-            <div className="profile-section">
-              <h4>Personal Information</h4>
-              <p>Update your personal details and contact information.</p>
-              <button className="btn btn-secondary">Edit Profile</button>
-            </div>
-            <div className="profile-section">
-              <h4>Account Settings</h4>
-              <p>Manage your account preferences and security settings.</p>
-              <button className="btn btn-secondary">Account Settings</button>
-            </div>
-            <div className="profile-section">
-              <h4>Notifications</h4>
-              <p>Configure how you receive notifications and updates.</p>
-              <button className="btn btn-secondary">Notification Settings</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function Settings() {
-  return (
-    <div className="tab-content">
-      <div className="section">
-        <h2>Settings</h2>
-        <div className="settings-grid">
-          <div className="settings-card">
-            <h3>🔧 General Settings</h3>
-            <p>Configure general application preferences and display options.</p>
-            <button className="btn btn-primary">Configure</button>
-          </div>
-          <div className="settings-card">
-            <h3>🔔 Notification Preferences</h3>
-            <p>Set up how and when you want to receive notifications.</p>
-            <button className="btn btn-primary">Configure</button>
-          </div>
-          <div className="settings-card">
-            <h3>🔒 Security Settings</h3>
-            <p>Manage your password, two-factor authentication, and security options.</p>
-            <button className="btn btn-primary">Configure</button>
-          </div>
-          <div className="settings-card">
-            <h3>🎨 Appearance</h3>
-            <p>Customize the look and feel of your dashboard and interface.</p>
-            <button className="btn btn-primary">Configure</button>
-          </div>
-          <div className="settings-card">
-            <h3>📊 Data & Privacy</h3>
-            <p>Control your data sharing preferences and privacy settings.</p>
-            <button className="btn btn-primary">Configure</button>
-          </div>
-          <div className="settings-card">
-            <h3>🔄 Integrations</h3>
-            <p>Connect with third-party services and manage API integrations.</p>
-            <button className="btn btn-primary">Configure</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function Help() {
-  return (
-    <div className="tab-content">
-      <div className="section">
-        <h2>Help & Support</h2>
-        <div className="help-content">
-          <div className="help-search">
-            <input type="text" placeholder="Search help articles..." className="help-search-input" />
-            <button className="btn btn-primary">Search</button>
-          </div>
-          <div className="help-sections">
-            <div className="help-section">
-              <h3>📚 Getting Started</h3>
-              <ul>
-                <li><a href="#">How to submit a maintenance request</a></li>
-                <li><a href="#">Setting up your profile</a></li>
-                <li><a href="#">Understanding the dashboard</a></li>
-                <li><a href="#">Payment processing guide</a></li>
-              </ul>
-            </div>
-            <div className="help-section">
-              <h3>🔧 Common Issues</h3>
-              <ul>
-                <li><a href="#">Troubleshooting login problems</a></li>
-                <li><a href="#">Payment processing errors</a></li>
-                <li><a href="#">Notification not working</a></li>
-                <li><a href="#">Mobile app issues</a></li>
-          </ul>
-            </div>
-            <div className="help-section">
-              <h3>📞 Contact Support</h3>
-              <p>Need more help? Our support team is here for you.</p>
-              <div className="contact-options">
-                <button className="btn btn-primary">Live Chat</button>
-                <button className="btn btn-secondary">Email Support</button>
-                <button className="btn btn-secondary">Phone: (555) 123-HELP</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Modern Landing Home Page
-function HomeScreen({ onNavigate }) {
-  return (
-    <div className="landing-page">
-      {/* Hero Section */}
-      <section className="hero-section">
-        <div className="hero-background">
-          <div className="hero-overlay"></div>
-          <div className="hero-particles"></div>
-        </div>
-        <div className="hero-content">
-          <div className="hero-text">
-            <div className="hero-badge">
-              <span className="badge-icon">✨</span>
-              Trusted by 500+ Properties
-            </div>
-            <h1 className="hero-title">
-              <span className="title-highlight">Nebula</span> Property Management
-              <span className="title-sub">Platform</span>
-            </h1>
-            <p className="hero-description">
-              The all-in-one property management solution that transforms how you manage properties, 
-              communicate with tenants, and grow your real estate portfolio.
-            </p>
-            <div className="hero-stats">
-              <div className="stat-item">
-                <span className="stat-number">500+</span>
-                <span className="stat-label">Properties Managed</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number">10K+</span>
-                <span className="stat-label">Happy Tenants</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number">99.9%</span>
-                <span className="stat-label">Uptime</span>
-              </div>
-            </div>
-            <div className="hero-actions">
-              <button 
-                className="cta-primary"
-                onClick={() => onNavigate('dashboard')}
-              >
-                <span className="cta-icon">🚀</span>
-                Launch Dashboard
-                <span className="cta-arrow">→</span>
-              </button>
-              <button 
-                className="cta-secondary"
-                onClick={() => onNavigate('help')}
-              >
-                <span className="cta-icon">📖</span>
-                View Demo
-              </button>
-            </div>
-          </div>
-          <div className="hero-visual">
-            <div className="dashboard-preview">
-              <div className="preview-header">
-                <div className="preview-dots">
-                  <span className="dot red"></span>
-                  <span className="dot yellow"></span>
-                  <span className="dot green"></span>
-                </div>
-                <div className="preview-title">Nebula Dashboard</div>
-              </div>
-              <div className="preview-content">
-                <div className="preview-widgets">
-                  <div className="preview-widget small"></div>
-                  <div className="preview-widget large"></div>
-                  <div className="preview-widget medium"></div>
-                  <div className="preview-widget small"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="features-section">
-        <div className="container">
-          <div className="section-header">
-            <h2 className="section-title">Everything You Need to Manage Properties</h2>
-            <p className="section-subtitle">
-              Powerful tools designed for modern property managers
-            </p>
-          </div>
-          <div className="features-grid">
-            <div className="feature-card" onClick={() => onNavigate('requests')}>
-              <div className="feature-icon">📋</div>
-              <h3>Smart Requests</h3>
-              <p>AI-powered request categorization and priority management</p>
-              <div className="feature-badge">New</div>
-            </div>
-            <div className="feature-card" onClick={() => onNavigate('payments')}>
-              <div className="feature-icon">💳</div>
-              <h3>Financial Dashboard</h3>
-              <p>Real-time revenue tracking and automated payment processing</p>
-            </div>
-            <div className="feature-card" onClick={() => onNavigate('maintenance')}>
-              <div className="feature-icon">🔧</div>
-              <h3>Maintenance Hub</h3>
-              <p>Schedule, track, and manage all maintenance activities</p>
-            </div>
-            <div className="feature-card" onClick={() => onNavigate('notifications')}>
-              <div className="feature-icon">🔔</div>
-              <h3>Smart Notifications</h3>
-              <p>Intelligent alerts and communication management</p>
-            </div>
-            <div className="feature-card" onClick={() => onNavigate('chat')}>
-              <div className="feature-icon">💬</div>
-              <h3>Tenant Portal</h3>
-              <p>24/7 communication and self-service options</p>
-            </div>
-            <div className="feature-card" onClick={() => onNavigate('dashboard')}>
-              <div className="feature-icon">📊</div>
-              <h3>Analytics & Reports</h3>
-              <p>Comprehensive insights and performance metrics</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* About Section */}
-      <section className="about-section">
-        <div className="container">
-          <div className="about-content">
-            <h2 className="about-title">Why Choose Nebula?</h2>
-            <p className="about-description">
-              We've revolutionized property management by combining cutting-edge technology 
-              with human expertise to deliver exceptional results for property owners and tenants alike.
-            </p>
-            <div className="about-features">
-              <div className="about-feature">
-                <div className="feature-check">✓</div>
-                <span>15+ years of industry experience</span>
-              </div>
-              <div className="about-feature">
-                <div className="feature-check">✓</div>
-                <span>AI-powered automation</span>
-              </div>
-              <div className="about-feature">
-                <div className="feature-check">✓</div>
-                <span>24/7 tenant support</span>
-              </div>
-              <div className="about-feature">
-                <div className="feature-check">✓</div>
-                <span>Mobile-first design</span>
-              </div>
-            </div>
-            <button 
-              className="about-cta"
-              onClick={() => onNavigate('dashboard')}
-            >
-              Get Started Today
-              <span className="cta-arrow">→</span>
-            </button>
-            <div className="about-visual">
-              <div className="about-image">
-                <img 
-                  src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1973&q=80" 
-                  alt="Happy family in their home" 
-                />
-                <div className="image-overlay">
-                  <div className="overlay-stats">
-                    <div className="overlay-stat">
-                      <span className="stat-number">500+</span>
-                      <span className="stat-label">Properties</span>
+            <div className="chat-container">
+                <div className="chat-header">
+                    <div className="chat-status">
+                        <div className="status-indicator online"></div>
+                        <span className="status-text">Support team online</span>
                     </div>
-                    <div className="overlay-stat">
-                      <span className="stat-number">10K+</span>
-                      <span className="stat-label">Tenants</span>
+                    <div className="chat-actions">
+                        <button className="btn btn-secondary btn-sm">
+                            <span className="btn-icon">📞</span>
+                            Call Support
+                        </button>
                     </div>
-                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="cta-section">
-        <div className="container">
-          <div className="cta-content">
-            <h2 className="cta-title">Ready to Transform Your Property Management?</h2>
-            <p className="cta-description">
-              Join thousands of property managers who trust Nebula to streamline their operations
-            </p>
-            <div className="cta-actions">
-              <button 
-                className="cta-primary large"
-                onClick={() => onNavigate('dashboard')}
-              >
-                <span className="cta-icon">🚀</span>
-                Start Free Trial
-                <span className="cta-arrow">→</span>
-              </button>
-              <button 
-                className="cta-secondary large"
-                onClick={() => onNavigate('help')}
-              >
-                <span className="cta-icon">📞</span>
-                Contact Sales
-              </button>
+                <div className="chat-messages">
+                    {messages.map(message => (
+                        <div key={message.id} className={`message ${message.sender}`}>
+                            <div className="message-avatar">
+                                {message.avatar}
+                            </div>
+                            <div className="message-bubble">
+                                <div className="message-content">
+                                    {message.text}
+                                </div>
+                                <div className="message-time">
+                                    {formatTime(message.timestamp)}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                    {isTyping && (
+                        <div className="message system">
+                            <div className="message-avatar">🤖</div>
+                            <div className="message-bubble">
+                                <div className="typing-indicator">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <form onSubmit={handleSendMessage} className="chat-input">
+                    <div className="input-group">
+                        <input
+                            type="text"
+                            value={newMessage}
+                            onChange={e => setNewMessage(e.target.value)}
+                            placeholder="Type your message..."
+                            className="message-input"
+                            disabled={isTyping}
+                        />
+                        <button
+                            type="submit"
+                            className="btn btn-primary send-button"
+                            disabled={!newMessage.trim() || isTyping}
+                        >
+                            <span className="btn-icon">📤</span>
+                            Send
+                        </button>
+                    </div>
+                </form>
             </div>
-          </div>
         </div>
-      </section>
-    </div>
-  )
+    )
 }
+
+function Notifications() { /* ... keep existing Notifications code ... */
+    const notifications = [
+        { id: 1, title: "New Maintenance Request", message: "A new maintenance request has been submitted for Unit 3A", time: "2 hours ago", type: "maintenance" },
+        { id: 2, title: "Payment Received", message: "Rent payment received from John Smith for Unit 2B", time: "4 hours ago", type: "payment" },
+        { id: 3, title: "Scheduled Maintenance", message: "HVAC maintenance scheduled for tomorrow at 10 AM", time: "1 day ago", type: "schedule" },
+        { id: 4, title: "System Update", message: "Nebula PM has been updated with new features", time: "2 days ago", type: "system" }
+    ]
+
+    return (
+        <div className="tab-content">
+            <div className="section">
+                <h2>Notifications</h2>
+                <div className="notifications-list">
+                    {notifications.map(notification => (
+                        <div key={notification.id} className={`notification-card notification-${notification.type}`}>
+                            <div className="notification-content">
+                                <h3>{notification.title}</h3>
+                                <p>{notification.message}</p>
+                                <span className="notification-time">{notification.time}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function Profile() { /* ... keep existing Profile code ... */
+    return (
+        <div className="tab-content">
+            <div className="section">
+                <h2>Profile Settings</h2>
+                <div className="profile-content">
+                    <div className="profile-info">
+                        <div className="profile-avatar">
+                            <span className="avatar-icon">👤</span>
+                        </div>
+                        <div className="profile-details">
+                            <h3>John Doe</h3>
+                            <p>Property Manager</p>
+                            <p>john.doe@nebula-pm.com</p>
+                        </div>
+                    </div>
+                    <div className="profile-sections">
+                        <div className="profile-section">
+                            <h4>Personal Information</h4>
+                            <p>Update your personal details and contact information.</p>
+                            <button className="btn btn-secondary">Edit Profile</button>
+                        </div>
+                        <div className="profile-section">
+                            <h4>Account Settings</h4>
+                            <p>Manage your account preferences and security settings.</p>
+                            <button className="btn btn-secondary">Account Settings</button>
+                        </div>
+                        <div className="profile-section">
+                            <h4>Notifications</h4>
+                            <p>Configure how you receive notifications and updates.</p>
+                            <button className="btn btn-secondary">Notification Settings</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function Settings() { /* ... keep existing Settings code ... */
+    return (
+        <div className="tab-content">
+            <div className="section">
+                <h2>Settings</h2>
+                <div className="settings-grid">
+                    <div className="settings-card">
+                        <h3>🔧 General Settings</h3>
+                        <p>Configure general application preferences and display options.</p>
+                        <button className="btn btn-primary">Configure</button>
+                    </div>
+                    <div className="settings-card">
+                        <h3>🔔 Notification Preferences</h3>
+                        <p>Set up how and when you want to receive notifications.</p>
+                        <button className="btn btn-primary">Configure</button>
+                    </div>
+                    <div className="settings-card">
+                        <h3>🔒 Security Settings</h3>
+                        <p>Manage your password, two-factor authentication, and security options.</p>
+                        <button className="btn btn-primary">Configure</button>
+                    </div>
+                    <div className="settings-card">
+                        <h3>🎨 Appearance</h3>
+                        <p>Customize the look and feel of your dashboard and interface.</p>
+                        <button className="btn btn-primary">Configure</button>
+                    </div>
+                    <div className="settings-card">
+                        <h3>📊 Data & Privacy</h3>
+                        <p>Control your data sharing preferences and privacy settings.</p>
+                        <button className="btn btn-primary">Configure</button>
+                    </div>
+                    <div className="settings-card">
+                        <h3>🔄 Integrations</h3>
+                        <p>Connect with third-party services and manage API integrations.</p>
+                        <button className="btn btn-primary">Configure</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function Help() { /* ... keep existing Help code ... */
+    return (
+        <div className="tab-content">
+            <div className="section">
+                <h2>Help & Support</h2>
+                <div className="help-content">
+                    <div className="help-search">
+                        <input type="text" placeholder="Search help articles..." className="help-search-input" />
+                        <button className="btn btn-primary">Search</button>
+                    </div>
+                    <div className="help-sections">
+                        <div className="help-section">
+                            <h3>📚 Getting Started</h3>
+                            <ul>
+                                <li><a href="#">How to submit a maintenance request</a></li>
+                                <li><a href="#">Setting up your profile</a></li>
+                                <li><a href="#">Understanding the dashboard</a></li>
+                                <li><a href="#">Payment processing guide</a></li>
+                            </ul>
+                        </div>
+                        <div className="help-section">
+                            <h3>🔧 Common Issues</h3>
+                            <ul>
+                                <li><a href="#">Troubleshooting login problems</a></li>
+                                <li><a href="#">Payment processing errors</a></li>
+                                <li><a href="#">Notification not working</a></li>
+                                <li><a href="#">Mobile app issues</a></li>
+                            </ul>
+                        </div>
+                        <div className="help-section">
+                            <h3>📞 Contact Support</h3>
+                            <p>Need more help? Our support team is here for you.</p>
+                            <div className="contact-options">
+                                <button className="btn btn-primary">Live Chat</button>
+                                <button className="btn btn-secondary">Email Support</button>
+                                <button className="btn btn-secondary">Phone: (555) 123-HELP</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function HomeScreen({ onNavigate }) { /* ... keep existing HomeScreen code ... */
+    return (
+        <div className="landing-page">
+            {/* Hero Section */}
+            <section className="hero-section">
+                <div className="hero-background">
+                    <div className="hero-overlay"></div>
+                    <div className="hero-particles"></div>
+                </div>
+                <div className="hero-content">
+                    <div className="hero-text">
+                        <div className="hero-badge">
+                            <span className="badge-icon">✨</span>
+                            Trusted by 500+ Properties
+                        </div>
+                        <h1 className="hero-title">
+                            <span className="title-highlight">Nebula</span> Property Management
+                            <span className="title-sub">Platform</span>
+                        </h1>
+                        <p className="hero-description">
+                            The all-in-one property management solution that transforms how you manage properties,
+                            communicate with tenants, and grow your real estate portfolio.
+                        </p>
+                        <div className="hero-stats">
+                            <div className="stat-item">
+                                <span className="stat-number">500+</span>
+                                <span className="stat-label">Properties Managed</span>
+                            </div>
+                            <div className="stat-item">
+                                <span className="stat-number">10K+</span>
+                                <span className="stat-label">Happy Tenants</span>
+                            </div>
+                            <div className="stat-item">
+                                <span className="stat-number">99.9%</span>
+                                <span className="stat-label">Uptime</span>
+                            </div>
+                        </div>
+                        <div className="hero-actions">
+                            <button
+                                className="cta-primary"
+                                onClick={() => onNavigate('dashboard')}
+                            >
+                                <span className="cta-icon">🚀</span>
+                                Launch Dashboard
+                                <span className="cta-arrow">→</span>
+                            </button>
+                            <button
+                                className="cta-secondary"
+                                onClick={() => onNavigate('help')}
+                            >
+                                <span className="cta-icon">📖</span>
+                                View Demo
+                            </button>
+                        </div>
+                    </div>
+                    <div className="hero-visual">
+                        <div className="dashboard-preview">
+                            <div className="preview-header">
+                                <div className="preview-dots">
+                                    <span className="dot red"></span>
+                                    <span className="dot yellow"></span>
+                                    <span className="dot green"></span>
+                                </div>
+                                <div className="preview-title">Nebula Dashboard</div>
+                            </div>
+                            <div className="preview-content">
+                                <div className="preview-widgets">
+                                    <div className="preview-widget small"></div>
+                                    <div className="preview-widget large"></div>
+                                    <div className="preview-widget medium"></div>
+                                    <div className="preview-widget small"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Features Section */}
+            <section className="features-section">
+                <div className="container">
+                    <div className="section-header">
+                        <h2 className="section-title">Everything You Need to Manage Properties</h2>
+                        <p className="section-subtitle">
+                            Powerful tools designed for modern property managers
+                        </p>
+                    </div>
+                    <div className="features-grid">
+                        <div className="feature-card" onClick={() => onNavigate('requests')}>
+                            <div className="feature-icon">📋</div>
+                            <h3>Smart Requests</h3>
+                            <p>AI-powered request categorization and priority management</p>
+                            <div className="feature-badge">New</div>
+                        </div>
+                        <div className="feature-card" onClick={() => onNavigate('payments')}>
+                            <div className="feature-icon">💳</div>
+                            <h3>Financial Dashboard</h3>
+                            <p>Real-time revenue tracking and automated payment processing</p>
+                        </div>
+                        <div className="feature-card" onClick={() => onNavigate('maintenance')}>
+                            <div className="feature-icon">🔧</div>
+                            <h3>Maintenance Hub</h3>
+                            <p>Schedule, track, and manage all maintenance activities</p>
+                        </div>
+                        <div className="feature-card" onClick={() => onNavigate('notifications')}>
+                            <div className="feature-icon">🔔</div>
+                            <h3>Smart Notifications</h3>
+                            <p>Intelligent alerts and communication management</p>
+                        </div>
+                        <div className="feature-card" onClick={() => onNavigate('chat')}>
+                            <div className="feature-icon">💬</div>
+                            <h3>Tenant Portal</h3>
+                            <p>24/7 communication and self-service options</p>
+                        </div>
+                        <div className="feature-card" onClick={() => onNavigate('dashboard')}>
+                            <div className="feature-icon">📊</div>
+                            <h3>Analytics & Reports</h3>
+                            <p>Comprehensive insights and performance metrics</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* About Section */}
+            <section className="about-section">
+                <div className="container">
+                    <div className="about-content">
+                        <h2 className="about-title">Why Choose Nebula?</h2>
+                        <p className="about-description">
+                            We've revolutionized property management by combining cutting-edge technology
+                            with human expertise to deliver exceptional results for property owners and tenants alike.
+                        </p>
+                        <div className="about-features">
+                            <div className="about-feature">
+                                <div className="feature-check">✓</div>
+                                <span>15+ years of industry experience</span>
+                            </div>
+                            <div className="about-feature">
+                                <div className="feature-check">✓</div>
+                                <span>AI-powered automation</span>
+                            </div>
+                            <div className="about-feature">
+                                <div className="feature-check">✓</div>
+                                <span>24/7 tenant support</span>
+                            </div>
+                            <div className="about-feature">
+                                <div className="feature-check">✓</div>
+                                <span>Mobile-first design</span>
+                            </div>
+                        </div>
+                        <button
+                            className="about-cta"
+                            onClick={() => onNavigate('dashboard')}
+                        >
+                            Get Started Today
+                            <span className="cta-arrow">→</span>
+                        </button>
+                        <div className="about-visual">
+                            <div className="about-image">
+                                <img
+                                    src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1973&q=80"
+                                    alt="Happy family in their home"
+                                />
+                                <div className="image-overlay">
+                                    <div className="overlay-stats">
+                                        <div className="overlay-stat">
+                                            <span className="stat-number">500+</span>
+                                            <span className="stat-label">Properties</span>
+                                        </div>
+                                        <div className="overlay-stat">
+                                            <span className="stat-number">10K+</span>
+                                            <span className="stat-label">Tenants</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* CTA Section */}
+            <section className="cta-section">
+                <div className="container">
+                    <div className="cta-content">
+                        <h2 className="cta-title">Ready to Transform Your Property Management?</h2>
+                        <p className="cta-description">
+                            Join thousands of property managers who trust Nebula to streamline their operations
+                        </p>
+                        <div className="cta-actions">
+                            <button
+                                className="cta-primary large"
+                                onClick={() => onNavigate('dashboard')}
+                            >
+                                <span className="cta-icon">🚀</span>
+                                Start Free Trial
+                                <span className="cta-arrow">→</span>
+                            </button>
+                            <button
+                                className="cta-secondary large"
+                                onClick={() => onNavigate('help')}
+                            >
+                                <span className="cta-icon">📞</span>
+                                Contact Sales
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    )
+}
+
 
 // Enhanced Dashboard Page
 function DashboardPage({ onNavigate }) {
+  // --- ADD THERMOSTAT STATE & LOGIC ---
   const [thermostat, setThermostat] = useState({ unitId: 'Unit 12B', currentTemp: 72, targetTemp: 70, mode: 'Cooling', status: 'Running', humidity: 45, fan: 'Auto', filterLife: 80, battery: 90, alerts: [ { id: 1, code: 'PM-HVAC-001', message: 'Compressor running longer than usual.', severity: 'Medium', timestamp: new Date(Date.now() - 3600000) }, { id: 2, code: 'PM-TEMP-002', message: 'Temperature sensor anomaly detected.', severity: 'High', timestamp: new Date(Date.now() - 86400000) }, { id: 3, code: 'PM-FILT-003', message: 'Air filter needs replacement soon.', severity: 'Low', timestamp: new Date(Date.now() - 172800000) }, ], });
   const [showAlertDetails, setShowAlertDetails] = useState(false);
   const [scheduledAlertId, setScheduledAlertId] = useState(null);
@@ -1155,6 +1224,9 @@ function DashboardPage({ onNavigate }) {
   const handleScheduleAlert = (alertId) => { console.log(`Scheduling tech for alert ${alertId}...`); setScheduledAlertId(alertId); };
   const handleDismissAlert = (alertId) => { console.log(`Dismissing alert ${alertId}...`); setThermostat(prev => ({ ...prev, alerts: (prev.alerts || []).filter(alert => alert.id !== alertId) })); setScheduledAlertId(null); };
   const formatAlertTime = (date) => { const now = new Date(); const alertDate = new Date(date); if (isNaN(alertDate)) return 'Invalid date'; const diffMs = now - alertDate; const diffHours = Math.round(diffMs / (1000 * 60 * 60)); const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24)); if (diffMs < 0) return 'Future date'; if (diffHours < 1) return 'Just now'; if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`; else return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`; };
+  // --- END THERMOSTAT STATE & LOGIC ---
+
+  // --- EXISTING DASHBOARD STATE ---
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -1233,7 +1305,7 @@ function DashboardPage({ onNavigate }) {
         priority: ticket.severity === 'high' ? 'High' : ticket.severity === 'medium' ? 'Medium' : 'Low',
         daysLeft: Math.max(0, 7 - daysSinceCreated), // Assume 7 days to complete
         assignedTo: ticket.technician_id ? `Technician ${ticket.technician_id}` : 'Unassigned',
-        status: ticket.status.toLowerCase().replace('_', ' ')
+        status: (ticket.status || 'unknown').toLowerCase().replace('_', ' ') // Added safety check
       }
     })
   }
@@ -1338,8 +1410,8 @@ function DashboardPage({ onNavigate }) {
 
         {/* Main Dashboard Grid */}
         <div className="dashboard-grid">
-        {/* --- FANCY & PROFESSIONAL SMART THERMOSTAT WIDGET --- */}
-        <div className="widget widget-thermostat">
+         {/* --- FANCY & PROFESSIONAL SMART THERMOSTAT WIDGET --- */}
+         <div className="widget widget-thermostat">
             {/* Header (retains previous good structure) */}
             <div className="widget-header">
               <div className="widget-icon">🔥</div>
@@ -1721,3 +1793,4 @@ export default function App() {
     </div>
   )
 }
+
